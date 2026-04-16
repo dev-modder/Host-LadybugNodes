@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LADYBUGNODES V5 · Panel Bots</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0b0e; --surface: #111318; --surface2: #181c22; --border: #1e242e;
+      --red: #ff3b5c; --red-dim: rgba(255,59,92,0.12);
+      --green: #00e676; --green-dim: rgba(0,230,118,0.10);
+      --amber: #ffab40; --amber-dim: rgba(255,171,64,0.12);
+      --blue: #40c4ff; --blue-dim: rgba(64,196,255,0.10);
+      --purple: #b388ff; --purple-dim: rgba(179,136,255,0.10);
+      --gold: #ffd700; --gold-dim: rgba(255,215,0,0.12);
+      --cyan: #00bcd4; --cyan-dim: rgba(0,188,212,0.10);
+      --muted: #4a5568; --text: #e2e8f0; --text-dim: #718096;
+      --font-mono: 'JetBrains Mono', monospace; --font-sans: 'Syne', sans-serif;
+      --radius: 12px;
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font-sans); min-height: 100vh; }
+    body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(255,59,92,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,59,92,0.025) 1px, transparent 1px); background-size: 48px 48px; pointer-events: none; z-index: 0; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 0 20px; position: relative; z-index: 1; }
+    
+    header { border-bottom: 1px solid var(--border); background: rgba(10,11,14,0.92); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; flex-wrap: wrap; }
+    .logo { display: flex; align-items: center; gap: 14px; }
+    .logo-icon { width: 44px; height: 44px; background: var(--red-dim); border: 1px solid rgba(255,59,92,0.3); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+    .logo-text h1 { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; line-height: 1; }
+    .logo-text h1 span { color: var(--red); }
+    .logo-text p { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); margin-top: 3px; }
+    
+    .version-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: var(--gold-dim); border: 1px solid rgba(255,215,0,0.3); border-radius: 999px; font-size: 10px; font-weight: 700; color: var(--gold); letter-spacing: 0.1em; margin-left: 8px; }
+    
+    .nav-tabs { display: flex; gap: 4px; }
+    .nav-tab { padding: 10px 18px; background: transparent; border: 1px solid transparent; border-radius: 8px; color: var(--text-dim); font-family: var(--font-sans); font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.2s; }
+    .nav-tab:hover { background: var(--surface); color: var(--text); }
+    .nav-tab.active { background: var(--surface); border-color: var(--border); color: var(--red); }
+    
+    .user-info { display: flex; align-items: center; gap: 12px; }
+    .coin-display { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--gold-dim); border: 1px solid rgba(255,215,0,0.25); border-radius: 999px; font-family: var(--font-mono); font-size: 12px; color: var(--gold); font-weight: 600; }
+    .user-badge { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; font-family: var(--font-mono); font-size: 12px; }
+    #user-name { color: var(--text); font-weight: 600; }
+    
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; border: none; font-family: var(--font-sans); font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.2s, transform 0.1s; }
+    .btn:hover { opacity: 0.85; }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-start { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,230,118,0.25); }
+    .btn-stop { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,59,92,0.25); }
+    .btn-restart { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(64,196,255,0.25); }
+    .btn-edit { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,171,64,0.25); }
+    .btn-add { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(179,136,255,0.25); }
+    .btn-danger { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,59,92,0.25); }
+    .btn-logout { background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border); }
+    .btn-vip { background: linear-gradient(135deg, var(--gold-dim), var(--amber-dim)); color: var(--gold); border: 1px solid rgba(255,215,0,0.3); }
+    .btn-basic { background: var(--cyan-dim); color: var(--cyan); border: 1px solid rgba(0,188,212,0.25); }
+    
+    main { padding: 32px 0 60px; }
+    .section-title { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); margin: 36px 0 16px; display: flex; align-items: center; gap: 10px; }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    
+    .quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .action-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; }
+    .action-card:hover { border-color: var(--muted); transform: translateY(-2px); }
+    .action-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .action-icon.gold { background: var(--gold-dim); }
+    .action-icon.purple { background: var(--purple-dim); }
+    .action-icon.cyan { background: var(--cyan-dim); }
+    .action-icon.amber { background: var(--amber-dim); }
+    .action-text h4 { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+    .action-text p { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); }
+    
+    .bots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
+    .bot-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; transition: border-color 0.25s, transform 0.2s; position: relative; overflow: hidden; }
+    .bot-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--purple), var(--blue)); opacity: 0.5; }
+    .bot-card.vip::before { background: linear-gradient(90deg, var(--gold), var(--amber)); opacity: 0.8; }
+    .bot-card:hover { border-color: var(--muted); transform: translateY(-2px); }
+    
+    .bot-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .bot-name { font-weight: 700; font-size: 16px; }
+    .bot-id { font-size: 10px; color: var(--text-dim); font-family: var(--font-mono); margin-top: 2px; }
+    .bot-desc { font-size: 12px; color: var(--text-dim); margin-bottom: 12px; line-height: 1.5; }
+    
+    .bot-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .meta-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; font-size: 10px; font-family: var(--font-mono); color: var(--text-dim); }
+    .meta-badge.vip { background: var(--gold-dim); border-color: rgba(255,215,0,0.25); color: var(--gold); }
+    
+    .badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+    .badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; }
+    .badge.running { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,230,118,0.25); }
+    .badge.running::before { background: var(--green); animation: blink 1.5s ease-in-out infinite; }
+    .badge.stopped { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,171,64,0.25); }
+    .badge.stopped::before { background: var(--amber); }
+    .badge.crashed { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,59,92,0.25); }
+    .badge.crashed::before { background: var(--red); }
+    .badge.starting { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(64,196,255,0.25); }
+    .badge.starting::before { background: var(--blue); animation: blink 1s ease-in-out infinite; }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+    
+    .bot-controls { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+    .bot-controls .btn { padding: 7px 12px; font-size: 11px; }
+    
+    .log-preview { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-top: 12px; max-height: 120px; overflow-y: auto; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+    .log-preview .log-line { margin-bottom: 4px; }
+    .log-time { color: var(--muted); }
+    .log-info { color: var(--blue); }
+    .log-warn { color: var(--amber); }
+    .log-error { color: var(--red); }
+    
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; visibility: hidden; transition: all 0.3s; }
+    .modal-overlay.active { opacity: 1; visibility: visible; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; transform: translateY(20px); transition: transform 0.3s; }
+    .modal-overlay.active .modal { transform: translateY(0); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+    .modal-title { font-weight: 700; font-size: 16px; }
+    .modal-close { background: none; border: none; color: var(--text-dim); font-size: 24px; cursor: pointer; line-height: 1; }
+    .modal-body { padding: 20px; }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; padding: 18px 20px; border-top: 1px solid var(--border); background: var(--surface2); }
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; font-family: var(--font-mono); }
+    .form-input { width: 100%; padding: 12px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--font-mono); font-size: 13px; transition: border-color 0.2s; outline: none; }
+    .form-input:focus { border-color: var(--purple); }
+    .form-select { width: 100%; padding: 12px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--font-mono); font-size: 13px; cursor: pointer; }
+    .form-hint { font-size: 11px; color: var(--text-dim); margin-top: 6px; font-family: var(--font-mono); }
+    
+    .tier-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .tier-option { background: var(--bg); border: 2px solid var(--border); border-radius: 10px; padding: 16px; cursor: pointer; transition: all 0.2s; text-align: center; }
+    .tier-option:hover { border-color: var(--muted); }
+    .tier-option.selected { border-color: var(--purple); background: var(--purple-dim); }
+    .tier-option.selected.vip { border-color: var(--gold); background: var(--gold-dim); }
+    .tier-option h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .tier-option .cost { font-size: 12px; font-family: var(--font-mono); color: var(--gold); margin-bottom: 8px; }
+    .tier-option .features { font-size: 10px; color: var(--text-dim); line-height: 1.6; }
+    
+    .empty-state { text-align: center; padding: 60px 20px; grid-column: 1 / -1; }
+    .empty-state-icon { font-size: 48px; margin-bottom: 16px; }
+    .empty-state-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .empty-state-desc { font-size: 13px; color: var(--text-dim); font-family: var(--font-mono); }
+    
+    #toast { position: fixed; bottom: 28px; right: 28px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+    .toast-item { padding: 12px 18px; border-radius: 10px; font-family: var(--font-mono); font-size: 13px; animation: slideIn 0.3s ease; max-width: 340px; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .toast-item.ok { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,230,118,0.25); }
+    .toast-item.error { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,59,92,0.25); }
+    .toast-item.warn { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,171,64,0.25); }
+    
+    .file-upload { border: 2px dashed var(--border); border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; transition: all 0.2s; }
+    .file-upload:hover { border-color: var(--purple); background: var(--purple-dim); }
+    .file-upload.dragover { border-color: var(--purple); background: var(--purple-dim); }
+    .file-upload-icon { font-size: 32px; margin-bottom: 8px; }
+    .file-upload-text { font-size: 13px; color: var(--text-dim); }
+    .file-upload input { display: none; }
+    
+    @media (max-width: 768px) {
+      .header-inner { flex-direction: column; gap: 16px; }
+      .nav-tabs { order: 3; width: 100%; justify-content: center; }
+      .bots-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+  <header>
+    <div class="container header-inner">
+      <div class="logo">
+        <div class="logo-icon">🐝</div>
+        <div class="logo-text">
+          <h1>LADYBUG<span>NODES</span></h1>
+          <p>Panel Bot Manager <span class="version-badge">V5</span></p>
+        </div>
+      </div>
+      <nav class="nav-tabs">
+        <a href="/" class="nav-tab">Dashboard</a>
+        <a href="/panel-bots.html" class="nav-tab active">Panel Bots</a>
+      </nav>
+      <div class="user-info">
+        <div class="coin-display">🪙 <span id="user-coins">0</span></div>
+        <div class="user-badge">
+          <span id="user-name">—</span>
+        </div>
+        <button class="btn btn-logout" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="quick-actions">
+      <div class="action-card" onclick="openUploadModal()">
+        <div class="action-icon purple">📤</div>
+        <div class="action-text">
+          <h4>Upload Bot</h4>
+          <p>Deploy your custom bot</p>
+        </div>
+      </div>
+      <div class="action-card" onclick="claimDailyReward()">
+        <div class="action-icon gold">🎁</div>
+        <div class="action-text">
+          <h4>Daily Reward</h4>
+          <p>+2 coins every day</p>
+        </div>
+      </div>
+      <div class="action-card" onclick="openRedeemModal()">
+        <div class="action-icon cyan">🎟️</div>
+        <div class="action-text">
+          <h4>Redeem Code</h4>
+          <p>Enter redemption code</p>
+        </div>
+      </div>
+      <div class="action-card" onclick="window.location.href='/'">
+        <div class="action-icon amber">📊</div>
+        <div class="action-text">
+          <h4>Dashboard</h4>
+          <p>Back to main panel</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Your Panel Bots</div>
+    <div class="bots-grid" id="bots-container">
+      <div class="empty-state">
+        <div class="empty-state-icon">📦</div>
+        <div class="empty-state-title">No panel bots uploaded</div>
+        <div class="empty-state-desc">Click "Upload Bot" to add your custom bot</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Upload Modal -->
+  <div class="modal-overlay" id="upload-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">📤 Upload New Bot</h3>
+        <button class="modal-close" onclick="closeModal('upload-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="upload-form" enctype="multipart/form-data">
+          <div class="form-group">
+            <label class="form-label">Bot Name</label>
+            <input type="text" class="form-input" id="bot-name" placeholder="MyAwesomeBot" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <input type="text" class="form-input" id="bot-desc" placeholder="A brief description of your bot">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Entry Point</label>
+            <input type="text" class="form-input" id="bot-entry" placeholder="index.js" value="index.js">
+            <p class="form-hint">The main file to run (e.g., index.js, main.js)</p>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Server Tier</label>
+            <div class="tier-selector">
+              <div class="tier-option selected" data-tier="basic" onclick="selectTier('basic')">
+                <h4>🖥️ Basic Server</h4>
+                <div class="cost">5 coins / 2 days</div>
+                <div class="features">Standard resources<br>Basic uptime<br>Email support</div>
+              </div>
+              <div class="tier-option vip" data-tier="vip" onclick="selectTier('vip')">
+                <h4>⭐ VIP Server</h4>
+                <div class="cost">200 coins</div>
+                <div class="features">Premium resources<br>99.9% uptime<br>Priority support<br>No coin cost to run</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Bot Package (ZIP)</label>
+            <div class="file-upload" id="file-drop-zone">
+              <div class="file-upload-icon">📁</div>
+              <div class="file-upload-text">Drop your ZIP file here or click to browse</div>
+              <input type="file" id="bot-file" name="botFile" accept=".zip" required>
+            </div>
+            <p class="form-hint" id="file-name-display"></p>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" onclick="closeModal('upload-modal')">Cancel</button>
+        <button class="btn btn-add" onclick="uploadBot()">📤 Upload Bot</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div class="modal-overlay" id="edit-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">✏️ Edit Bot</h3>
+        <button class="modal-close" onclick="closeModal('edit-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="edit-form">
+          <input type="hidden" id="edit-bot-id">
+          <div class="form-group">
+            <label class="form-label">Bot Name</label>
+            <input type="text" class="form-input" id="edit-bot-name" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <input type="text" class="form-input" id="edit-bot-desc">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Server Tier</label>
+            <div class="tier-selector">
+              <div class="tier-option" id="edit-tier-basic" data-tier="basic" onclick="selectEditTier('basic')">
+                <h4>🖥️ Basic Server</h4>
+                <div class="cost">5 coins / 2 days</div>
+              </div>
+              <div class="tier-option vip" id="edit-tier-vip" data-tier="vip" onclick="selectEditTier('vip')">
+                <h4>⭐ VIP Server</h4>
+                <div class="cost">200 coins</div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" onclick="closeModal('edit-modal')">Cancel</button>
+        <button class="btn btn-edit" onclick="saveEdit()">💾 Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Redeem Code Modal -->
+  <div class="modal-overlay" id="redeem-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">🎟️ Redeem Code</h3>
+        <button class="modal-close" onclick="closeModal('redeem-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Enter Redemption Code</label>
+          <input type="text" class="form-input" id="redeem-code" placeholder="CODE-XXXX-XXXX" style="text-transform: uppercase;">
+          <p class="form-hint">Enter a valid code to receive coins or bot time</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" onclick="closeModal('redeem-modal')">Cancel</button>
+        <button class="btn btn-add" onclick="redeemCode()">✨ Redeem</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Log Modal -->
+  <div class="modal-overlay" id="log-modal">
+    <div class="modal" style="max-width: 700px;">
+      <div class="modal-header">
+        <h3 class="modal-title">📋 Bot Logs - <span id="log-bot-name">Bot</span></h3>
+        <button class="modal-close" onclick="closeModal('log-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="log-preview" id="log-content" style="max-height: 400px;">
+          Loading logs...
+        </div>
+        <p class="form-hint" id="log-notice" style="margin-top: 12px;"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" onclick="closeModal('log-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    // Global state
+    let currentUser = null;
+    let bots = [];
+    let selectedTier = 'basic';
+    let editTier = 'basic';
+
+    // Constants
+    const COIN_COST_START = 5;
+    const COIN_DAILY_REWARD = 2;
+    const VIP_SERVER_COST = 200;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+      await fetchUser();
+      await fetchBots();
+      setupFileUpload();
+    });
+
+    // Auth functions
+    async function fetchUser() {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (!res.ok) { window.location.href = '/login.html'; return; }
+        currentUser = await res.json();
+        document.getElementById('user-name').textContent = currentUser.username;
+        document.getElementById('user-coins').textContent = currentUser.coins || 0;
+      } catch (e) {
+        window.location.href = '/login.html';
+      }
+    }
+
+    function logout() {
+      document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      window.location.href = '/login.html';
+    }
+
+    // Bot functions
+    async function fetchBots() {
+      try {
+        const res = await fetch('/api/bot-configs');
+        if (!res.ok) throw new Error('Failed to fetch bots');
+        bots = await res.json();
+        renderBots();
+      } catch (e) {
+        showToast('Failed to load bots', 'error');
+      }
+    }
+
+    function renderBots() {
+      const container = document.getElementById('bots-container');
+      
+      if (!bots || bots.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📦</div>
+            <div class="empty-state-title">No panel bots uploaded</div>
+            <div class="empty-state-desc">Click "Upload Bot" to add your custom bot</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = bots.map(bot => `
+        <div class="bot-card ${bot.serverTier === 'vip' ? 'vip' : ''}">
+          <div class="bot-header">
+            <div>
+              <div class="bot-name">${escapeHtml(bot.name)}</div>
+              <div class="bot-id">ID: ${bot._id || bot.id}</div>
+            </div>
+            <span class="badge ${bot.status}">${bot.status}</span>
+          </div>
+          <p class="bot-desc">${escapeHtml(bot.description || 'No description')}</p>
+          <div class="bot-meta">
+            <span class="meta-badge ${bot.serverTier === 'vip' ? 'vip' : ''}">${bot.serverTier === 'vip' ? '⭐ VIP' : '🖥️ Basic'}</span>
+            <span class="meta-badge">📁 ${bot.entryPoint || 'index.js'}</span>
+            ${bot.paidUntil ? `<span class="meta-badge">⏱️ Until ${formatDate(bot.paidUntil)}</span>` : ''}
+          </div>
+          <div class="bot-controls">
+            ${bot.status === 'running' 
+              ? `<button class="btn btn-stop" onclick="stopBot('${bot._id || bot.id}')">⏹️ Stop</button>`
+              : `<button class="btn btn-start" onclick="startBot('${bot._id || bot.id}')">▶️ Start</button>`
+            }
+            <button class="btn btn-restart" onclick="restartBot('${bot._id || bot.id}')">🔄 Restart</button>
+            <button class="btn btn-edit" onclick="editBot('${bot._id || bot.id}')">✏️ Edit</button>
+            <button class="btn" style="background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(64,196,255,0.25);" onclick="viewLogs('${bot._id || bot.id}', '${escapeHtml(bot.name)}')">📋 Logs</button>
+            <button class="btn btn-danger" onclick="deleteBot('${bot._id || bot.id}')">🗑️ Delete</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Upload functions
+    function openUploadModal() {
+      document.getElementById('upload-modal').classList.add('active');
+      document.getElementById('upload-form').reset();
+      selectedTier = 'basic';
+      updateTierUI();
+    }
+
+    function selectTier(tier) {
+      selectedTier = tier;
+      updateTierUI();
+    }
+
+    function updateTierUI() {
+      document.querySelectorAll('.tier-selector .tier-option').forEach(el => {
+        el.classList.remove('selected');
+        if (el.dataset.tier === selectedTier) {
+          el.classList.add('selected');
+        }
+      });
+    }
+
+    function setupFileUpload() {
+      const dropZone = document.getElementById('file-drop-zone');
+      const fileInput = document.getElementById('bot-file');
+
+      dropZone.addEventListener('click', () => fileInput.click());
+      
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+      });
+
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          fileInput.files = files;
+          document.getElementById('file-name-display').textContent = `Selected: ${files[0].name}`;
+        }
+      });
+
+      fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+          document.getElementById('file-name-display').textContent = `Selected: ${fileInput.files[0].name}`;
+        }
+      });
+    }
+
+    async function uploadBot() {
+      const form = document.getElementById('upload-form');
+      const formData = new FormData(form);
+      const name = document.getElementById('bot-name').value;
+      const desc = document.getElementById('bot-desc').value;
+      const entry = document.getElementById('bot-entry').value;
+      const file = document.getElementById('bot-file').files[0];
+
+      if (!name || !file) {
+        showToast('Please fill in all required fields', 'error');
+        return;
+      }
+
+      // Check coin balance for VIP
+      if (selectedTier === 'vip' && currentUser.coins < VIP_SERVER_COST) {
+        showToast(`You need ${VIP_SERVER_COST} coins for VIP server. You have ${currentUser.coins}.`, 'error');
+        return;
+      }
+
+      // Check coin balance for basic
+      if (selectedTier === 'basic' && currentUser.coins < COIN_COST_START) {
+        showToast(`You need ${COIN_COST_START} coins to start a bot. You have ${currentUser.coins}.`, 'error');
+        return;
+      }
+
+      formData.append('name', name);
+      formData.append('description', desc);
+      formData.append('entryPoint', entry);
+      formData.append('serverTier', selectedTier);
+
+      try {
+        const res = await fetch('/api/bot-configs/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Upload failed');
+        
+        showToast('Bot uploaded successfully!', 'ok');
+        closeModal('upload-modal');
+        await fetchUser();
+        await fetchBots();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    // Bot control functions
+    async function startBot(botId) {
+      // Check balance first
+      const bot = bots.find(b => (b._id || b.id) === botId);
+      
+      if (bot.serverTier !== 'vip' && currentUser.coins < COIN_COST_START) {
+        showToast(`You need ${COIN_COST_START} coins to start this bot. You have ${currentUser.coins}.`, 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/bot-configs/${botId}/start`, { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to start');
+        
+        showToast('Bot started successfully!', 'ok');
+        await fetchUser();
+        await fetchBots();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    async function stopBot(botId) {
+      try {
+        const res = await fetch(`/api/bot-configs/${botId}/stop`, { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to stop');
+        
+        showToast('Bot stopped', 'ok');
+        await fetchBots();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    async function restartBot(botId) {
+      try {
+        const res = await fetch(`/api/bot-configs/${botId}/restart`, { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to restart');
+        
+        showToast('Bot restarted', 'ok');
+        await fetchBots();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    async function deleteBot(botId) {
+      if (!confirm('Are you sure you want to delete this bot? You can recover it within 7 days.')) return;
+      
+      try {
+        const res = await fetch(`/api/bot-configs/${botId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to delete');
+        
+        showToast('Bot deleted. You can recover it from the dashboard.', 'warn');
+        await fetchBots();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    // Edit functions
+    function editBot(botId) {
+      const bot = bots.find(b => (b._id || b.id) === botId);
+      if (!bot) return;
+
+      document.getElementById('edit-bot-id').value = botId;
+      document.getElementById('edit-bot-name').value = bot.name;
+      document.getElementById('edit-bot-desc').value = bot.description || '';
+      editTier = bot.serverTier || 'basic';
+      updateEditTierUI();
+      
+      document.getElementById('edit-modal').classList.add('active');
+    }
+
+    function selectEditTier(tier) {
+      editTier = tier;
+      updateEditTierUI();
+    }
+
+    function updateEditTierUI() {
+      document.getElementById('edit-tier-basic').classList.toggle('selected', editTier === 'basic');
+      document.getElementById('edit-tier-vip').classList.toggle('selected', editTier === 'vip');
+    }
+
+    async function saveEdit() {
+      const botId = document.getElementById('edit-bot-id').value;
+      const name = document.getElementById('edit-bot-name').value;
+      const desc = document.getElementById('edit-bot-desc').value;
+
+      try {
+        const res = await fetch(`/api/bot-configs/${botId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, description: desc, serverTier: editTier })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to update');
+        
+        showToast('Bot updated', 'ok');
+        closeModal('edit-modal');
+        await fetchBots();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    // Logs function
+    async function viewLogs(botId, botName) {
+      document.getElementById('log-bot-name').textContent = botName;
+      document.getElementById('log-content').textContent = 'Loading...';
+      document.getElementById('log-modal').classList.add('active');
+      
+      try {
+        const res = await fetch(`/api/bot-configs/${botId}/logs`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to get logs');
+        
+        document.getElementById('log-content').textContent = data.logs || 'No logs available';
+        
+        // Show notice about 20-minute limit for non-admin users
+        if (currentUser.role !== 'admin') {
+          document.getElementById('log-notice').textContent = '⚠️ Note: Logs are visible for the first 20 minutes after bot start.';
+        } else {
+          document.getElementById('log-notice').textContent = '👑 Admin: Full log access enabled.';
+        }
+      } catch (e) {
+        document.getElementById('log-content').textContent = 'Error: ' + e.message;
+      }
+    }
+
+    // Coin functions
+    async function claimDailyReward() {
+      try {
+        const res = await fetch('/api/coins/daily', { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to claim');
+        
+        showToast(`🎁 Daily reward claimed! +${data.reward || COIN_DAILY_REWARD} coins`, 'ok');
+        await fetchUser();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    function openRedeemModal() {
+      document.getElementById('redeem-modal').classList.add('active');
+      document.getElementById('redeem-code').value = '';
+    }
+
+    async function redeemCode() {
+      const code = document.getElementById('redeem-code').value.trim().toUpperCase();
+      if (!code) {
+        showToast('Please enter a code', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/codes/redeem', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Invalid code');
+        
+        showToast(`✨ Code redeemed! +${data.coins || 0} coins`, 'ok');
+        closeModal('redeem-modal');
+        await fetchUser();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    // Utility functions
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    function showToast(message, type = 'ok') {
+      const toast = document.getElementById('toast');
+      const item = document.createElement('div');
+      item.className = `toast-item ${type}`;
+      item.textContent = message;
+      toast.appendChild(item);
+      setTimeout(() => item.remove(), 4000);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/"/g, '"');
+    }
+
+    function formatDate(date) {
+      if (!date) return 'N/A';
+      return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+  </script>
+</body>
+</html>
