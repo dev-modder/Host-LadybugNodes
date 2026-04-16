@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: ladybugnodes
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: RENDER_URL
+        sync: false
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGODB_URI
+        sync: false
+      - key: COIN_COST_START
+        value: "5"
+      - key: COIN_DAILY_REWARD
+        value: "2"
+      - key: COIN_REFERRAL_REWARD
+        value: "5"
+      - key: VIP_SERVER_COST
+        value: "200"
+      - key: BOT_DURATION_DAYS
+        value: "2"
+      - key: LOG_VIEWING_MINUTES
+        value: "20"
