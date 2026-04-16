@@ -1820,11 +1820,140 @@ app.get('/api/status', (req, res) => {
     pingCount: state.pingCount,
     cleanCount: state.cleanCount,
     mem,
-    version: '5.0.0'
+    version: '3.0.0'
   });
 });
 
-app.get('/health', (req, res) => res.json({ status: 'ok', ts: Date.now(), version: '5.0.0' }));
+// ─────────────────────────────────────────────────────────────────────────────
+// V3 — STATS API (dashboard summary)
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/api/stats', requireAuth, async (req, res) => {
+  try {
+    let totalUsers = 0, totalSessions = 0, activeBots = 0, totalPanelBots = 0;
+
+    if (useMongoDB) {
+      totalUsers    = await User.countDocuments();
+      totalSessions = await Session.countDocuments(req.user.role === 'admin' ? {} : { ownerId: req.user.id });
+      totalPanelBots = await BotConfig.countDocuments(req.user.role === 'admin' ? {} : { ownerId: req.user.id });
+    } else {
+      const users    = loadUsers();
+      const sessions = loadSessions();
+      const configs  = loadBotConfigs();
+      totalUsers     = users.length;
+      totalSessions  = req.user.role === 'admin' ? sessions.length : sessions.filter(s => s.ownerId === req.user.id).length;
+      totalPanelBots = req.user.role === 'admin' ? configs.length : configs.filter(c => c.ownerId === req.user.id).length;
+    }
+
+    activeBots = Object.keys(state.botProcesses).length + Object.keys(state.panelBotProcesses).length;
+
+    const mem = process.memoryUsage();
+    const uptimeSecs = Math.floor((Date.now() - state.startTime) / 1000);
+
+    res.json({
+      version: '3.0.0',
+      uptime: uptimeSecs,
+      activeBots,
+      totalUsers,
+      totalSessions,
+      totalPanelBots,
+      memUsedMB: Math.round(mem.rss / 1024 / 1024),
+      memHeapMB: Math.round(mem.heapUsed / 1024 / 1024),
+      nodeVersion: process.version,
+      platform: process.platform
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// V3 — BOT FEATURES API
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/api/bot-features', (req, res) => {
+  res.json({
+    version: '3.0.0',
+    categories: [
+      {
+        name: 'General',
+        icon: '🌐',
+        commands: [
+          { cmd: '.menu', desc: 'Show full command list with categories' },
+          { cmd: '.ping', desc: 'Check bot response time & uptime' },
+          { cmd: '.info', desc: 'Bot info: version, owner, prefix' },
+          { cmd: '.alive', desc: 'Confirm the bot is online' },
+          { cmd: '.runtime', desc: 'Show how long the bot has been running' }
+        ]
+      },
+      {
+        name: 'Media & Downloads',
+        icon: '📥',
+        commands: [
+          { cmd: '.ytmp3 <url>', desc: 'Download YouTube audio as MP3' },
+          { cmd: '.ytmp4 <url>', desc: 'Download YouTube video as MP4' },
+          { cmd: '.tiktok <url>', desc: 'Download TikTok video (no watermark)' },
+          { cmd: '.instagram <url>', desc: 'Download Instagram Reels/Posts' },
+          { cmd: '.sticker', desc: 'Convert image/video to WhatsApp sticker' },
+          { cmd: '.toimg', desc: 'Convert sticker back to image' }
+        ]
+      },
+      {
+        name: 'AI & Tools',
+        icon: '🤖',
+        commands: [
+          { cmd: '.ai <prompt>', desc: 'Chat with an AI assistant' },
+          { cmd: '.gpt <prompt>', desc: 'GPT-powered text generation' },
+          { cmd: '.img <prompt>', desc: 'AI image generation' },
+          { cmd: '.translate <lang> <text>', desc: 'Translate text to any language' },
+          { cmd: '.weather <city>', desc: 'Get current weather for any city' }
+        ]
+      },
+      {
+        name: 'Group Management',
+        icon: '👥',
+        commands: [
+          { cmd: '.kick @user', desc: 'Remove a user from the group' },
+          { cmd: '.promote @user', desc: 'Promote user to group admin' },
+          { cmd: '.demote @user', desc: 'Remove admin from a user' },
+          { cmd: '.mute', desc: 'Mute the group (admins only can send)' },
+          { cmd: '.unmute', desc: 'Unmute the group for everyone' },
+          { cmd: '.add <number>', desc: 'Add a new member to the group' },
+          { cmd: '.groupinfo', desc: 'Show group info and stats' },
+          { cmd: '.setdesc <text>', desc: 'Change the group description' },
+          { cmd: '.setname <text>', desc: 'Rename the group' },
+          { cmd: '.antilink on/off', desc: 'Auto-remove messages containing links' },
+          { cmd: '.antispam on/off', desc: 'Auto-remove spam messages' }
+        ]
+      },
+      {
+        name: 'Fun & Games',
+        icon: '🎮',
+        commands: [
+          { cmd: '.joke', desc: 'Get a random joke' },
+          { cmd: '.meme', desc: 'Fetch a random meme image' },
+          { cmd: '.quote', desc: 'Get an inspiring quote' },
+          { cmd: '.trivia', desc: 'Start a trivia quiz' },
+          { cmd: '.truth', desc: 'Truth or dare — truth question' },
+          { cmd: '.dare', desc: 'Truth or dare — dare challenge' },
+          { cmd: '.8ball <question>', desc: 'Ask the magic 8-ball' }
+        ]
+      },
+      {
+        name: 'Owner / Admin',
+        icon: '👑',
+        commands: [
+          { cmd: '.broadcast <msg>', desc: 'Broadcast message to all groups' },
+          { cmd: '.setprefix <char>', desc: 'Change bot command prefix' },
+          { cmd: '.block @user', desc: 'Block a contact' },
+          { cmd: '.unblock @user', desc: 'Unblock a contact' },
+          { cmd: '.restart', desc: 'Restart the bot process' },
+          { cmd: '.clearlog', desc: 'Clear bot activity logs' }
+        ]
+      }
+    ]
+  });
+});
+
+app.get('/health', (req, res) => res.json({ status: 'ok', ts: Date.now(), version: '3.0.0' }));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SERVE HTML PAGES
@@ -1834,6 +1963,8 @@ app.get('/signup', (req, res) => res.sendFile(path.join(__dirname, 'public', 'si
 app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, 'public', 'terms.html')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/panel-bots.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'panel-bots.html')));
+app.get('/bot-features', (req, res) => res.sendFile(path.join(__dirname, 'public', 'bot-features.html')));
+app.get('/bot-features.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'bot-features.html')));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BOT PROCESS MANAGER
@@ -2128,7 +2259,7 @@ wss.on('connection', async (ws) => {
       pingCount: state.pingCount,
       cleanCount: state.cleanCount,
       mem: process.memoryUsage(),
-      version: '5.0.0'
+      version: '3.0.0'
     }
   }));
 
@@ -2195,7 +2326,7 @@ async function start() {
   await connectMongoDB();
   
   server.listen(PORT, () => {
-    log(`LADYBUGNODES V5 running on port ${PORT}`, 'ok');
+    log(`LADYBUGNODES V3 running on port ${PORT}`, 'ok');
     if (RENDER_URL) log(`Keep-alive targeting: ${RENDER_URL}`, 'info');
     else log(`Set RENDER_URL env var to enable keep-alive pings`, 'warn');
   });
