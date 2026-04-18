@@ -1,7 +1,7 @@
 {
   "name": "ladybugnodes",
-  "version": "3.0.0",
-  "description": "LADYBUGNODES V3 — Multi-Host WhatsApp Bot Dashboard with Live Stats, Bot Features Display, Dark Mode, Toast Notifications, and more",
+  "version": "5.0.0",
+  "description": "LADYBUGNODES V5 \u2014 Multi-Host WhatsApp Bot Dashboard with Live Stats, Bot Features Display, Dark Mode, Toast Notifications, and more",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
