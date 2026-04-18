@@ -1820,12 +1820,12 @@ app.get('/api/status', (req, res) => {
     pingCount: state.pingCount,
     cleanCount: state.cleanCount,
     mem,
-    version: '3.0.0'
+    version: '5.0.0'
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// V3 — STATS API (dashboard summary)
+// V5 — STATS API (dashboard summary)
 // ─────────────────────────────────────────────────────────────────────────────
 app.get('/api/stats', requireAuth, async (req, res) => {
   try {
@@ -1850,7 +1850,7 @@ app.get('/api/stats', requireAuth, async (req, res) => {
     const uptimeSecs = Math.floor((Date.now() - state.startTime) / 1000);
 
     res.json({
-      version: '3.0.0',
+      version: '5.0.0',
       uptime: uptimeSecs,
       activeBots,
       totalUsers,
@@ -1867,11 +1867,11 @@ app.get('/api/stats', requireAuth, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// V3 — BOT FEATURES API
+// V5 — BOT FEATURES API
 // ─────────────────────────────────────────────────────────────────────────────
 app.get('/api/bot-features', (req, res) => {
   res.json({
-    version: '3.0.0',
+    version: '5.0.0',
     categories: [
       {
         name: 'General',
@@ -1953,7 +1953,7 @@ app.get('/api/bot-features', (req, res) => {
   });
 });
 
-app.get('/health', (req, res) => res.json({ status: 'ok', ts: Date.now(), version: '3.0.0' }));
+app.get('/health', (req, res) => res.json({ status: 'ok', ts: Date.now(), version: '5.0.0' }));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SERVE HTML PAGES
@@ -2259,7 +2259,7 @@ wss.on('connection', async (ws) => {
       pingCount: state.pingCount,
       cleanCount: state.cleanCount,
       mem: process.memoryUsage(),
-      version: '3.0.0'
+      version: '5.0.0'
     }
   }));
 
@@ -2326,7 +2326,7 @@ async function start() {
   await connectMongoDB();
   
   server.listen(PORT, () => {
-    log(`LADYBUGNODES V3 running on port ${PORT}`, 'ok');
+    log(`LADYBUGNODES V5 running on port ${PORT}`, 'ok');
     if (RENDER_URL) log(`Keep-alive targeting: ${RENDER_URL}`, 'info');
     else log(`Set RENDER_URL env var to enable keep-alive pings`, 'warn');
   });

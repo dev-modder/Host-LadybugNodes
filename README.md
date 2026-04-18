@@ -1,13 +1,13 @@
-# 🐞 LADYBUGNODES V3
+# 🐞 LADYBUGNODES V5
 
-**Version:** 3.0.0  
+**Version:** 5.0.0  
 **Developer:** [Dev-Ntando](https://github.com/dev-modder)
 
 A powerful multi-host dashboard for running multiple WhatsApp bots on Render.com. Includes a full login system, coin economy, admin panel, custom bot upload support, live server stats, bot features display, dark/light mode, and toast notifications.
 
 ---
 
-## ✨ What's New in v3.0.0
+## ✨ What's New in v5.0.0
 
 - **🤖 Bot Features Page** — `/bot-features.html` — A full, searchable display of every bot command, grouped by category. Loads live from the API.
 - **📊 Live Server Stats Widget** — Real-time RAM, uptime, active bots, total users/sessions visible on the features page and dashboard footer. Refreshes every 30 seconds.
@@ -17,7 +17,7 @@ A powerful multi-host dashboard for running multiple WhatsApp bots on Render.com
 - **🟢 Animated Status Badges** — Bot statuses (Running / Stopped / Starting / Crashed) display as colour-coded animated badges.
 - **📡 `/api/stats` Endpoint** — Returns: `version`, `uptime`, `activeBots`, `totalUsers`, `totalSessions`, `totalPanelBots`, `memUsedMB`, `nodeVersion`, `platform`.
 - **📋 `/api/bot-features` Endpoint** — Full structured command list (6 categories, 40+ commands) as JSON.
-- **🔖 Version bumped** to `3.0.0` across `package.json`, `server.js`, `/health`, `/api/status`, and all HTML pages.
+- **🔖 Version bumped** to `5.0.0` across `package.json`, `server.js`, `/health`, `/api/status`, and all HTML pages.
 
 ---
 
@@ -37,14 +37,14 @@ A powerful multi-host dashboard for running multiple WhatsApp bots on Render.com
 | Redemption Codes | ✅ |
 | Deleted Bot Recovery (7 days) | ✅ |
 | Bot Logs (20-min / full admin) | ✅ |
-| **Bot Features Display Page** | ✅ NEW v3 |
-| **Live Server Stats Widget** | ✅ NEW v3 |
-| **Dark / Light Mode** | ✅ NEW v3 |
-| **Toast Notification System** | ✅ NEW v3 |
-| **Session Expiry Countdown** | ✅ NEW v3 |
-| **Animated Status Badges** | ✅ NEW v3 |
-| **`/api/stats` Endpoint** | ✅ NEW v3 |
-| **`/api/bot-features` Endpoint** | ✅ NEW v3 |
+| **Bot Features Display Page** | ✅ NEW v5 |
+| **Live Server Stats Widget** | ✅ NEW v5 |
+| **Dark / Light Mode** | ✅ NEW v5 |
+| **Toast Notification System** | ✅ NEW v5 |
+| **Session Expiry Countdown** | ✅ NEW v5 |
+| **Animated Status Badges** | ✅ NEW v5 |
+| **`/api/stats` Endpoint** | ✅ NEW v5 |
+| **`/api/bot-features` Endpoint** | ✅ NEW v5 |
 | WebSocket Real-Time Updates | ✅ |
 | Render.com One-Click Deploy | ✅ |
 
@@ -57,7 +57,7 @@ A powerful multi-host dashboard for running multiple WhatsApp bots on Render.com
 ```bash
 git init
 git add .
-git commit -m "LADYBUGNODES v3.0.0"
+git commit -m "LADYBUGNODES v5.0.0"
 git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
 git push -u origin main
 ```
@@ -83,7 +83,7 @@ git push -u origin main
 
 ---
 
-## 🤖 Bot Features Page (NEW v3)
+## 🤖 Bot Features Page (NEW v5)
 
 Navigate to `/bot-features.html` to see all 40+ bot commands across 6 categories:
 
@@ -120,7 +120,7 @@ Navigate to `/bot-features.html` to see all 40+ bot commands across 6 categories
 - `GET /api/users` · `POST /api/users` · `PUT /api/users/:id` · `DELETE /api/users/:id`
 - `POST /api/codes` · `GET /api/codes` · `POST /api/codes/redeem`
 
-### v3 New
+### v5 New
 - `GET /api/stats` — Live server metrics (authenticated)
 - `GET /api/bot-features` — Full bot command catalogue (public)
 - `GET /health` · `GET /api/status`
@@ -144,7 +144,7 @@ ladybugnodes/
     ├── login.html
     ├── signup.html
     ├── panel-bots.html
-    ├── bot-features.html   # NEW v3
+    ├── bot-features.html   # NEW v5
     └── terms.html
 ```
 
@@ -163,7 +163,7 @@ npm run dev
 
 ## 📜 Changelog
 
-### v3.0.0
+### v5.0.0
 - Bot Features page with 40+ commands in 6 categories
 - `/api/bot-features` and `/api/stats` endpoints
 - Dark / light mode toggle with localStorage persistence
@@ -171,7 +171,7 @@ npm run dev
 - Session expiry countdown per bot card
 - Animated colour-coded status badges
 - Live server stats widget in dashboard footer
-- Version bumped to 3.0.0 everywhere
+- Version bumped to 5.0.0 everywhere
 
 ### v2.1.0
 - JWT login, coin economy, admin panel, custom bot ZIP upload, multi-tenant sessions
