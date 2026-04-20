@@ -4,273 +4,300 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NOVASPARK V5 · Panel Bots</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #0a0b0e; --surface: #111318; --surface2: #181c22; --border: #1e242e;
-      --red: #ff3b5c; --red-dim: rgba(255,59,92,0.12);
-      --green: #00e676; --green-dim: rgba(0,230,118,0.10);
-      --amber: #ffab40; --amber-dim: rgba(255,171,64,0.12);
-      --blue: #40c4ff; --blue-dim: rgba(64,196,255,0.10);
-      --purple: #b388ff; --purple-dim: rgba(179,136,255,0.10);
-      --gold: #ffd700; --gold-dim: rgba(255,215,0,0.12);
-      --cyan: #00bcd4; --cyan-dim: rgba(0,188,212,0.10);
-      --muted: #4a5568; --text: #e2e8f0; --text-dim: #718096;
-      --font-mono: 'JetBrains Mono', monospace; --font-sans: 'Syne', sans-serif;
-      --radius: 12px;
+      --bg:#0d1117; --panel:#161b22; --panel2:#1c2333; --panel3:#21262d; --border:#30363d; --border2:#21262d;
+      --accent:#1f6feb; --accent2:#388bfd; --accent-glow:rgba(31,111,235,0.2);
+      --green:#3fb950; --green-dim:rgba(63,185,80,0.12); --green-b:rgba(63,185,80,0.3);
+      --red:#f85149;   --red-dim:rgba(248,81,73,0.12);   --red-b:rgba(248,81,73,0.3);
+      --amber:#d29922; --amber-dim:rgba(210,153,34,0.12); --amber-b:rgba(210,153,34,0.3);
+      --blue:#58a6ff;  --blue-dim:rgba(88,166,255,0.12);  --blue-b:rgba(88,166,255,0.3);
+      --cyan:#39c5cf;  --cyan-dim:rgba(57,197,207,0.12);
+      --purple:#bc8cff;--purple-dim:rgba(188,140,255,0.12);
+      --gold:#e3b341;  --gold-dim:rgba(227,179,65,0.12);  --gold-b:rgba(227,179,65,0.3);
+      --text:#e6edf3;  --text-dim:#8b949e; --text-muted:#484f58;
+      --mono:'JetBrains Mono',monospace; --sans:'Inter',sans-serif; --radius:8px;
+      --sidebar-w:220px;
     }
-    html { scroll-behavior: smooth; }
-    body { background: var(--bg); color: var(--text); font-family: var(--font-sans); min-height: 100vh; }
-    body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(255,59,92,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,59,92,0.025) 1px, transparent 1px); background-size: 48px 48px; pointer-events: none; z-index: 0; }
-    .container { max-width: 1400px; margin: 0 auto; padding: 0 20px; position: relative; z-index: 1; }
-    
-    header { border-bottom: 1px solid var(--border); background: rgba(10,11,14,0.92); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
-    .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; flex-wrap: wrap; }
-    .logo { display: flex; align-items: center; gap: 14px; }
-    .logo-icon { width: 44px; height: 44px; background: var(--red-dim); border: 1px solid rgba(255,59,92,0.3); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-    .logo-text h1 { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; line-height: 1; }
-    .logo-text h1 span { color: var(--red); }
-    .logo-text p { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); margin-top: 3px; }
-    
-    .version-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: var(--gold-dim); border: 1px solid rgba(255,215,0,0.3); border-radius: 999px; font-size: 10px; font-weight: 700; color: var(--gold); letter-spacing: 0.1em; margin-left: 8px; }
-    
-    .nav-tabs { display: flex; gap: 4px; }
-    .nav-tab { padding: 10px 18px; background: transparent; border: 1px solid transparent; border-radius: 8px; color: var(--text-dim); font-family: var(--font-sans); font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.2s; }
-    .nav-tab:hover { background: var(--surface); color: var(--text); }
-    .nav-tab.active { background: var(--surface); border-color: var(--border); color: var(--red); }
-    
-    .user-info { display: flex; align-items: center; gap: 12px; }
-    .coin-display { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--gold-dim); border: 1px solid rgba(255,215,0,0.25); border-radius: 999px; font-family: var(--font-mono); font-size: 12px; color: var(--gold); font-weight: 600; }
-    .user-badge { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; font-family: var(--font-mono); font-size: 12px; }
-    #user-name { color: var(--text); font-weight: 600; }
-    
-    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; border: none; font-family: var(--font-sans); font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.2s, transform 0.1s; }
-    .btn:hover { opacity: 0.85; }
-    .btn:active { transform: scale(0.97); }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-start { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,230,118,0.25); }
-    .btn-stop { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,59,92,0.25); }
-    .btn-restart { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(64,196,255,0.25); }
-    .btn-edit { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,171,64,0.25); }
-    .btn-add { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(179,136,255,0.25); }
-    .btn-danger { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,59,92,0.25); }
-    .btn-logout { background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border); }
-    .btn-vip { background: linear-gradient(135deg, var(--gold-dim), var(--amber-dim)); color: var(--gold); border: 1px solid rgba(255,215,0,0.3); }
-    .btn-basic { background: var(--cyan-dim); color: var(--cyan); border: 1px solid rgba(0,188,212,0.25); }
-    
-    main { padding: 32px 0 60px; }
-    .section-title { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); margin: 36px 0 16px; display: flex; align-items: center; gap: 10px; }
-    .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-    
-    .quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 24px; }
-    .action-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; }
-    .action-card:hover { border-color: var(--muted); transform: translateY(-2px); }
-    .action-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-    .action-icon.gold { background: var(--gold-dim); }
-    .action-icon.purple { background: var(--purple-dim); }
-    .action-icon.cyan { background: var(--cyan-dim); }
-    .action-icon.amber { background: var(--amber-dim); }
-    .action-text h4 { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
-    .action-text p { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); }
-    
-    .bots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
-    .bot-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; transition: border-color 0.25s, transform 0.2s; position: relative; overflow: hidden; }
-    .bot-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--purple), var(--blue)); opacity: 0.5; }
-    .bot-card.vip::before { background: linear-gradient(90deg, var(--gold), var(--amber)); opacity: 0.8; }
-    .bot-card:hover { border-color: var(--muted); transform: translateY(-2px); }
-    
-    .bot-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-    .bot-name { font-weight: 700; font-size: 16px; }
-    .bot-id { font-size: 10px; color: var(--text-dim); font-family: var(--font-mono); margin-top: 2px; }
-    .bot-desc { font-size: 12px; color: var(--text-dim); margin-bottom: 12px; line-height: 1.5; }
-    
-    .bot-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-    .meta-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; font-size: 10px; font-family: var(--font-mono); color: var(--text-dim); }
-    .meta-badge.vip { background: var(--gold-dim); border-color: rgba(255,215,0,0.25); color: var(--gold); }
-    
-    .badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
-    .badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; }
-    .badge.running { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,230,118,0.25); }
-    .badge.running::before { background: var(--green); animation: blink 1.5s ease-in-out infinite; }
-    .badge.stopped { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,171,64,0.25); }
-    .badge.stopped::before { background: var(--amber); }
-    .badge.crashed { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,59,92,0.25); }
-    .badge.crashed::before { background: var(--red); }
-    .badge.starting { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(64,196,255,0.25); }
-    .badge.starting::before { background: var(--blue); animation: blink 1s ease-in-out infinite; }
-    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-    
-    .bot-controls { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
-    .bot-controls .btn { padding: 7px 12px; font-size: 11px; }
-    
-    .log-preview { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-top: 12px; max-height: 120px; overflow-y: auto; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
-    .log-preview .log-line { margin-bottom: 4px; }
-    .log-time { color: var(--muted); }
-    .log-info { color: var(--blue); }
-    .log-warn { color: var(--amber); }
-    .log-error { color: var(--red); }
-    
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; visibility: hidden; transition: all 0.3s; }
-    .modal-overlay.active { opacity: 1; visibility: visible; }
-    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; transform: translateY(20px); transition: transform 0.3s; }
-    .modal-overlay.active .modal { transform: translateY(0); }
-    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border); background: var(--surface2); }
-    .modal-title { font-weight: 700; font-size: 16px; }
-    .modal-close { background: none; border: none; color: var(--text-dim); font-size: 24px; cursor: pointer; line-height: 1; }
-    .modal-body { padding: 20px; }
-    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; padding: 18px 20px; border-top: 1px solid var(--border); background: var(--surface2); }
-    .form-group { margin-bottom: 16px; }
-    .form-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; font-family: var(--font-mono); }
-    .form-input { width: 100%; padding: 12px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--font-mono); font-size: 13px; transition: border-color 0.2s; outline: none; }
-    .form-input:focus { border-color: var(--purple); }
-    .form-select { width: 100%; padding: 12px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--font-mono); font-size: 13px; cursor: pointer; }
-    .form-hint { font-size: 11px; color: var(--text-dim); margin-top: 6px; font-family: var(--font-mono); }
-    
-    .tier-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
-    .tier-option { background: var(--bg); border: 2px solid var(--border); border-radius: 10px; padding: 16px; cursor: pointer; transition: all 0.2s; text-align: center; }
-    .tier-option:hover { border-color: var(--muted); }
-    .tier-option.selected { border-color: var(--purple); background: var(--purple-dim); }
-    .tier-option.selected.vip { border-color: var(--gold); background: var(--gold-dim); }
-    .tier-option h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
-    .tier-option .cost { font-size: 12px; font-family: var(--font-mono); color: var(--gold); margin-bottom: 8px; }
-    .tier-option .features { font-size: 10px; color: var(--text-dim); line-height: 1.6; }
-    
-    .empty-state { text-align: center; padding: 60px 20px; grid-column: 1 / -1; }
-    .empty-state-icon { font-size: 48px; margin-bottom: 16px; }
-    .empty-state-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
-    .empty-state-desc { font-size: 13px; color: var(--text-dim); font-family: var(--font-mono); }
-    
-    #toast { position: fixed; bottom: 28px; right: 28px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
-    .toast-item { padding: 12px 18px; border-radius: 10px; font-family: var(--font-mono); font-size: 13px; animation: slideIn 0.3s ease; max-width: 340px; }
-    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    .toast-item.ok { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,230,118,0.25); }
-    .toast-item.error { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,59,92,0.25); }
-    .toast-item.warn { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,171,64,0.25); }
-    
-    .file-upload { border: 2px dashed var(--border); border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; transition: all 0.2s; }
-    .file-upload:hover { border-color: var(--purple); background: var(--purple-dim); }
-    .file-upload.dragover { border-color: var(--purple); background: var(--purple-dim); }
-    .file-upload-icon { font-size: 32px; margin-bottom: 8px; }
-    .file-upload-text { font-size: 13px; color: var(--text-dim); }
-    .file-upload input { display: none; }
-    
-    @media (max-width: 768px) {
-      .header-inner { flex-direction: column; gap: 16px; }
-      .nav-tabs { order: 3; width: 100%; justify-content: center; }
-      .bots-grid { grid-template-columns: 1fr; }
-    }
+    html { height:100%; }
+    body { background:var(--bg); color:var(--text); font-family:var(--sans); min-height:100vh; display:flex; }
+
+    /* SIDEBAR */
+    .sidebar { width:var(--sidebar-w); min-height:100vh; background:var(--panel); border-right:1px solid var(--border); display:flex; flex-direction:column; position:fixed; top:0; left:0; z-index:200; }
+    .sidebar-logo { padding:18px 16px 16px; border-bottom:1px solid var(--border2); display:flex; align-items:center; gap:10px; }
+    .sidebar-logo-icon { width:36px; height:36px; background:var(--accent); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; box-shadow:0 0 12px var(--accent-glow); }
+    .sidebar-logo-text { font-size:16px; font-weight:700; letter-spacing:-0.3px; line-height:1.1; }
+    .sidebar-logo-text span { color:var(--accent2); }
+    .sidebar-logo-badge { display:block; font-family:var(--mono); font-size:9px; color:var(--text-muted); margin-top:2px; }
+    .sidebar-section { padding:6px 8px; }
+    .sidebar-section-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); padding:8px 8px 4px; font-family:var(--mono); }
+    .nav-item { display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:6px; color:var(--text-dim); font-size:13px; font-weight:500; cursor:pointer; text-decoration:none; transition:all 0.15s; margin-bottom:2px; }
+    .nav-item:hover { background:var(--panel2); color:var(--text); }
+    .nav-item.active { background:rgba(31,111,235,0.15); color:var(--accent2); border:1px solid rgba(31,111,235,0.2); }
+    .nav-item-icon { font-size:15px; width:20px; text-align:center; flex-shrink:0; }
+    .sidebar-footer { margin-top:auto; padding:12px 16px; border-top:1px solid var(--border2); }
+    .user-pill { display:flex; align-items:center; gap:10px; padding:8px 10px; background:var(--panel2); border:1px solid var(--border2); border-radius:8px; }
+    .user-pill-avatar { width:30px; height:30px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+    .user-pill-name { font-size:13px; font-weight:600; }
+    .user-pill-role { font-size:10px; color:var(--text-dim); font-family:var(--mono); }
+
+    /* MAIN */
+    .main-content { margin-left:var(--sidebar-w); flex:1; min-height:100vh; display:flex; flex-direction:column; }
+    .topbar { height:56px; background:var(--panel); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 24px; position:sticky; top:0; z-index:100; gap:12px; }
+    .topbar-breadcrumb { font-size:13px; color:var(--text-dim); display:flex; align-items:center; gap:6px; }
+    .topbar-breadcrumb span { color:var(--text); font-weight:600; }
+    .topbar-actions { display:flex; align-items:center; gap:8px; }
+    .coin-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; background:var(--gold-dim); border:1px solid var(--gold-b); border-radius:999px; font-family:var(--mono); font-size:12px; font-weight:600; color:var(--gold); }
+    .page { padding:24px; flex:1; }
+    .section-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; gap:12px; flex-wrap:wrap; }
+    .section-title { font-size:13px; font-weight:600; color:var(--text); }
+    .section-subtitle { font-size:11px; color:var(--text-dim); font-family:var(--mono); margin-top:2px; }
+    .divider { height:1px; background:var(--border); margin:24px 0; }
+
+    /* BUTTONS */
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:var(--radius); border:none; font-family:var(--sans); font-size:12px; font-weight:500; cursor:pointer; transition:all 0.15s; text-decoration:none; }
+    .btn:hover { opacity:0.85; }
+    .btn:active { transform:scale(0.98); }
+    .btn:disabled { opacity:0.45; cursor:not-allowed; }
+    .btn-primary { background:var(--accent); color:#fff; }
+    .btn-primary:hover { background:var(--accent2); opacity:1; box-shadow:0 0 12px var(--accent-glow); }
+    .btn-start   { background:var(--green-dim);  color:var(--green);  border:1px solid var(--green-b); }
+    .btn-stop    { background:var(--red-dim);     color:var(--red);    border:1px solid var(--red-b); }
+    .btn-restart { background:var(--blue-dim);    color:var(--blue);   border:1px solid var(--blue-b); }
+    .btn-edit    { background:var(--amber-dim);   color:var(--amber);  border:1px solid var(--amber-b); }
+    .btn-add     { background:var(--accent);      color:#fff; }
+    .btn-danger  { background:var(--red-dim);     color:var(--red);    border:1px solid var(--red-b); }
+    .btn-logout  { background:var(--panel2);      color:var(--text-dim); border:1px solid var(--border); }
+    .btn-gold    { background:linear-gradient(135deg,var(--gold),#b8860b); color:#000; }
+    .btn-sm      { padding:5px 10px; font-size:11px; }
+
+    /* BADGES */
+    .badge { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:999px; font-family:var(--mono); font-size:10px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; }
+    .badge::before { content:''; width:6px; height:6px; border-radius:50%; }
+    .badge.running  { background:var(--green-dim); color:var(--green); border:1px solid var(--green-b); }
+    .badge.running::before  { background:var(--green); animation:blink 1.5s ease-in-out infinite; }
+    .badge.stopped  { background:var(--red-dim);   color:var(--red);   border:1px solid var(--red-b); }
+    .badge.stopped::before  { background:var(--red); }
+    .badge.crashed  { background:var(--red-dim);   color:var(--red);   border:1px solid var(--red-b); }
+    .badge.starting { background:var(--amber-dim); color:var(--amber); border:1px solid var(--amber-b); }
+    .badge.starting::before { background:var(--amber); animation:blink 1.5s ease-in-out infinite; }
+    .badge.vip   { background:var(--gold-dim); color:var(--gold); border:1px solid var(--gold-b); font-size:9px; }
+    .badge.basic { background:var(--panel2); color:var(--text-muted); border:1px solid var(--border); font-size:9px; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* ACTION TILES */
+    .action-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin-bottom:24px; }
+    .action-tile { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:border-color 0.15s,transform 0.15s; }
+    .action-tile:hover { border-color:var(--accent); transform:translateY(-1px); }
+    .at-icon { width:38px; height:38px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+    .at-icon.purple { background:var(--purple-dim); }
+    .at-icon.gold   { background:var(--gold-dim); }
+    .at-icon.cyan   { background:var(--cyan-dim); }
+    .at-icon.amber  { background:var(--amber-dim); }
+    .at-title { font-size:13px; font-weight:600; margin-bottom:2px; }
+    .at-desc  { font-size:11px; color:var(--text-dim); font-family:var(--mono); }
+
+    /* BOTS GRID */
+    .bots-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:14px; }
+    .bot-card { background:var(--panel); border:1px solid var(--border); border-radius:10px; overflow:hidden; transition:border-color 0.2s,transform 0.15s; }
+    .bot-card:hover { border-color:var(--accent); transform:translateY(-1px); }
+    .bot-card.vip  { border-color:rgba(227,179,65,0.3); }
+    .bc-top { background:var(--panel2); padding:14px 16px; border-bottom:1px solid var(--border2); display:flex; align-items:center; justify-content:space-between; }
+    .bc-identity { display:flex; align-items:center; gap:10px; }
+    .bc-avatar { width:36px; height:36px; background:var(--accent-glow); border:1px solid rgba(31,111,235,0.3); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+    .bc-avatar.vip { background:var(--gold-dim); border-color:var(--gold-b); }
+    .bc-name { font-size:14px; font-weight:600; }
+    .bc-id   { font-size:10px; color:var(--text-muted); font-family:var(--mono); margin-top:1px; }
+    .bc-body { padding:14px 16px; }
+    .bc-desc { font-size:12px; color:var(--text-dim); margin-bottom:12px; line-height:1.5; }
+    .bc-meta { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+    .meta-tag { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; background:var(--panel2); border:1px solid var(--border); border-radius:5px; font-size:10px; font-family:var(--mono); color:var(--text-muted); }
+    .meta-tag.vip { background:var(--gold-dim); border-color:var(--gold-b); color:var(--gold); }
+    .bc-actions { display:flex; gap:6px; flex-wrap:wrap; }
+
+    /* TIER SELECTOR */
+    .tier-selector { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px; }
+    .tier-option { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:14px; cursor:pointer; transition:all 0.15s; }
+    .tier-option:hover { border-color:var(--accent); }
+    .tier-option.selected { border-color:var(--accent); background:rgba(31,111,235,0.06); }
+    .tier-option.vip { border-color:var(--gold-b); }
+    .tier-option.vip.selected { background:var(--gold-dim); border-color:var(--gold); }
+    .tier-option h4 { font-size:13px; font-weight:600; margin-bottom:4px; }
+    .tier-option .cost { font-size:11px; color:var(--accent2); font-family:var(--mono); margin-bottom:6px; }
+    .tier-option .features { font-size:11px; color:var(--text-dim); line-height:1.6; }
+
+    /* FILE UPLOAD */
+    .file-upload { border:1.5px dashed var(--border); border-radius:var(--radius); padding:24px; text-align:center; cursor:pointer; transition:border-color 0.15s; position:relative; }
+    .file-upload:hover { border-color:var(--accent); }
+    .file-upload input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+    .file-upload-icon { font-size:28px; margin-bottom:8px; }
+    .file-upload-text { font-size:12px; color:var(--text-dim); font-family:var(--mono); }
+    .form-hint { font-size:11px; color:var(--text-muted); font-family:var(--mono); margin-top:5px; }
+
+    /* LOG PREVIEW */
+    .log-preview { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:12px; font-family:var(--mono); font-size:12px; line-height:1.7; color:var(--text-dim); overflow-y:auto; max-height:360px; white-space:pre-wrap; word-break:break-all; }
+
+    /* EMPTY */
+    .empty-state { text-align:center; padding:50px 20px; grid-column:1/-1; }
+    .empty-state-icon { font-size:40px; margin-bottom:12px; }
+    .empty-state-title { font-size:16px; font-weight:600; margin-bottom:6px; }
+    .empty-state-desc { font-size:12px; color:var(--text-dim); font-family:var(--mono); }
+
+    /* MODALS */
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px; opacity:0; visibility:hidden; transition:all 0.2s; }
+    .modal-overlay.active { opacity:1; visibility:visible; }
+    .modal { background:var(--panel); border:1px solid var(--border); border-radius:12px; width:100%; max-width:500px; max-height:90vh; overflow-y:auto; transform:translateY(16px); transition:transform 0.2s; box-shadow:0 20px 60px rgba(0,0,0,0.6); }
+    .modal-overlay.active .modal { transform:translateY(0); }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); background:var(--panel2); }
+    .modal-title { font-weight:600; font-size:15px; }
+    .modal-close { background:none; border:none; color:var(--text-dim); font-size:22px; cursor:pointer; }
+    .modal-close:hover { color:var(--text); }
+    .modal-body { padding:20px; }
+    .modal-footer { padding:14px 20px; border-top:1px solid var(--border); background:var(--panel2); display:flex; justify-content:flex-end; gap:8px; }
+    .form-group { margin-bottom:14px; }
+    .form-label { display:block; font-size:11px; font-weight:500; color:var(--text-dim); margin-bottom:5px; font-family:var(--mono); text-transform:uppercase; letter-spacing:0.05em; }
+    .form-input { width:100%; padding:9px 12px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); font-family:var(--mono); font-size:13px; transition:border-color 0.15s,box-shadow 0.15s; outline:none; }
+    .form-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow); }
+    .form-input::placeholder { color:var(--text-muted); }
+
+    /* FOOTER */
+    .page-footer { border-top:1px solid var(--border); padding:14px 24px; background:var(--panel); font-size:11px; color:var(--text-muted); font-family:var(--mono); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .page-footer a { color:var(--text-dim); text-decoration:none; }
+
+    @media(max-width:700px) { :root{--sidebar-w:0px;} .sidebar{display:none;} .main-content{margin-left:0;} }
   </style>
-<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
 </head>
 <body>
-  <header>
-    <div class="container header-inner">
-      <div class="logo">
-        <div class="logo-icon">🐝</div>
-        <div class="logo-text">
-          <h1>NOVA<span>SPARK</span></h1>
-          <p>Panel Bot Manager <span class="version-badge">V5</span></p>
-        </div>
-      </div>
-      <nav class="nav-tabs">
-        <a href="/" class="nav-tab">Dashboard</a>
-        <a href="/panel-bots.html" class="nav-tab active">Panel Bots</a>
-        <a href="/bot-features.html" class="nav-tab">🤖 Bot Features</a>
-      </nav>
-      <div class="user-info">
-        <div class="coin-display">🪙 <span id="user-coins">0</span></div>
-        <div class="user-badge">
-          <span id="user-name">—</span>
-        </div>
-        <button class="btn btn-logout" onclick="logout()">Logout</button>
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">⚡</div>
+      <div>
+        <div class="sidebar-logo-text">NOVA<span>SPARK</span></div>
+        <span class="sidebar-logo-badge">V5 Control Panel</span>
       </div>
     </div>
-  </header>
-
-  <main class="container">
-    <div class="quick-actions">
-      <div class="action-card" onclick="openUploadModal()">
-        <div class="action-icon purple">📤</div>
-        <div class="action-text">
-          <h4>Upload Bot</h4>
-          <p>Deploy your custom bot</p>
-        </div>
-      </div>
-      <div class="action-card" onclick="claimDailyReward()">
-        <div class="action-icon gold">🎁</div>
-        <div class="action-text">
-          <h4>Daily Reward</h4>
-          <p>+2 coins every day</p>
-        </div>
-      </div>
-      <div class="action-card" onclick="openRedeemModal()">
-        <div class="action-icon cyan">🎟️</div>
-        <div class="action-text">
-          <h4>Redeem Code</h4>
-          <p>Enter redemption code</p>
-        </div>
-      </div>
-      <div class="action-card" onclick="window.location.href='/'">
-        <div class="action-icon amber">📊</div>
-        <div class="action-text">
-          <h4>Dashboard</h4>
-          <p>Back to main panel</p>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Main</div>
+      <a href="/" class="nav-item"><span class="nav-item-icon">▦</span> Dashboard</a>
+      <a href="/panel-bots.html" class="nav-item active"><span class="nav-item-icon">📦</span> Panel Bots</a>
+      <a href="/bot-features.html" class="nav-item"><span class="nav-item-icon">🤖</span> Bot Features</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Actions</div>
+      <div class="nav-item" onclick="openUploadModal()"><span class="nav-item-icon">📤</span> Upload Bot</div>
+      <div class="nav-item" onclick="claimDailyReward()"><span class="nav-item-icon">📅</span> Daily Reward</div>
+      <div class="nav-item" onclick="openRedeemModal()"><span class="nav-item-icon">🎟️</span> Redeem Code</div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="user-pill-avatar">👤</div>
+        <div>
+          <div class="user-pill-name" id="user-name">—</div>
+          <div class="user-pill-role">Panel Manager</div>
         </div>
       </div>
     </div>
+  </aside>
 
-    <div class="section-title">Your Panel Bots</div>
-    <div class="bots-grid" id="bots-container">
-      <div class="empty-state">
-        <div class="empty-state-icon">📦</div>
-        <div class="empty-state-title">No panel bots uploaded</div>
-        <div class="empty-state-desc">Click "Upload Bot" to add your custom bot</div>
+  <!-- MAIN -->
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-breadcrumb">
+        <span style="color:var(--text-muted)">NOVASPARK</span>
+        <span style="color:var(--text-muted)">/</span>
+        <span>Panel Bots</span>
       </div>
-    </div>
-  </main>
+      <div class="topbar-actions">
+        <div class="coin-chip">🪙 <span id="user-coins">0</span></div>
+        <button class="btn btn-primary btn-sm" onclick="openUploadModal()">+ Upload Bot</button>
+        <button class="btn btn-logout btn-sm" onclick="logout()">Sign Out</button>
+      </div>
+    </header>
 
-  <!-- Upload Modal -->
+    <main class="page">
+      <div class="section-hdr">
+        <div>
+          <div class="section-title">Quick Actions</div>
+          <div class="section-subtitle">// Manage your panel bot deployments</div>
+        </div>
+      </div>
+      <div class="action-grid">
+        <div class="action-tile" onclick="openUploadModal()">
+          <div class="at-icon purple">📤</div>
+          <div><div class="at-title">Upload Bot</div><div class="at-desc">Deploy a custom bot ZIP</div></div>
+        </div>
+        <div class="action-tile" onclick="claimDailyReward()">
+          <div class="at-icon gold">🎁</div>
+          <div><div class="at-title">Daily Reward</div><div class="at-desc">+2 coins every day</div></div>
+        </div>
+        <div class="action-tile" onclick="openRedeemModal()">
+          <div class="at-icon cyan">🎟️</div>
+          <div><div class="at-title">Redeem Code</div><div class="at-desc">Enter redemption code</div></div>
+        </div>
+        <div class="action-tile" onclick="window.location.href='/'">
+          <div class="at-icon amber">▦</div>
+          <div><div class="at-title">Dashboard</div><div class="at-desc">Back to main panel</div></div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-hdr">
+        <div>
+          <div class="section-title">Your Panel Bots</div>
+          <div class="section-subtitle">// Custom bot deployments</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openUploadModal()">+ Upload Bot</button>
+      </div>
+      <div class="bots-grid" id="bots-container">
+        <div class="empty-state">
+          <div class="empty-state-icon">📦</div>
+          <div class="empty-state-title">No panel bots uploaded</div>
+          <div class="empty-state-desc">Click "Upload Bot" to deploy your custom bot</div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="page-footer">
+      <span>NOVASPARK V5 · Panel Bot Manager</span>
+      <div>
+        <a href="/">Dashboard</a> &nbsp;•&nbsp;
+        <a href="/terms.html">Terms</a> &nbsp;•&nbsp;
+        <span style="color:var(--gold)">Dev-Ntando</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- UPLOAD MODAL -->
   <div class="modal-overlay" id="upload-modal">
     <div class="modal">
       <div class="modal-header">
         <h3 class="modal-title">📤 Upload New Bot</h3>
-        <button class="modal-close" onclick="closeModal('upload-modal')">&times;</button>
+        <button class="modal-close" onclick="closeModal('upload-modal')">×</button>
       </div>
       <div class="modal-body">
         <form id="upload-form" enctype="multipart/form-data">
-          <div class="form-group">
-            <label class="form-label">Bot Name</label>
-            <input type="text" class="form-input" id="bot-name" placeholder="MyAwesomeBot" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Description</label>
-            <input type="text" class="form-input" id="bot-desc" placeholder="A brief description of your bot">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Entry Point</label>
-            <input type="text" class="form-input" id="bot-entry" placeholder="index.js" value="index.js">
-            <p class="form-hint">The main file to run (e.g., index.js, main.js)</p>
-          </div>
-          
+          <div class="form-group"><label class="form-label">Bot Name</label><input type="text" class="form-input" id="bot-name" placeholder="MyAwesomeBot" required></div>
+          <div class="form-group"><label class="form-label">Description</label><input type="text" class="form-input" id="bot-desc" placeholder="A brief description of your bot"></div>
+          <div class="form-group"><label class="form-label">Entry Point</label><input type="text" class="form-input" id="bot-entry" placeholder="index.js" value="index.js"><p class="form-hint">The main file to run (e.g., index.js, main.js)</p></div>
           <div class="form-group">
             <label class="form-label">Server Tier</label>
             <div class="tier-selector">
               <div class="tier-option selected" data-tier="basic" onclick="selectTier('basic')">
                 <h4>🖥️ Basic Server</h4>
                 <div class="cost">5 coins / 2 days</div>
-                <div class="features">Standard resources<br>Basic uptime<br>Email support</div>
+                <div class="features">Standard resources<br>Basic uptime</div>
               </div>
               <div class="tier-option vip" data-tier="vip" onclick="selectTier('vip')">
                 <h4>⭐ VIP Server</h4>
                 <div class="cost">200 coins</div>
-                <div class="features">Premium resources<br>99.9% uptime<br>Priority support<br>No coin cost to run</div>
+                <div class="features">Premium resources<br>99.9% uptime<br>Priority support</div>
               </div>
             </div>
           </div>
-          
           <div class="form-group">
             <label class="form-label">Bot Package (ZIP)</label>
             <div class="file-upload" id="file-drop-zone">
@@ -283,88 +310,73 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-danger" onclick="closeModal('upload-modal')">Cancel</button>
-        <button class="btn btn-add" onclick="uploadBot()">📤 Upload Bot</button>
+        <button class="btn btn-stop" onclick="closeModal('upload-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="uploadBot()">📤 Upload Bot</button>
       </div>
     </div>
   </div>
 
-  <!-- Edit Modal -->
+  <!-- EDIT MODAL -->
   <div class="modal-overlay" id="edit-modal">
     <div class="modal">
       <div class="modal-header">
         <h3 class="modal-title">✏️ Edit Bot</h3>
-        <button class="modal-close" onclick="closeModal('edit-modal')">&times;</button>
+        <button class="modal-close" onclick="closeModal('edit-modal')">×</button>
       </div>
       <div class="modal-body">
         <form id="edit-form">
           <input type="hidden" id="edit-bot-id">
-          <div class="form-group">
-            <label class="form-label">Bot Name</label>
-            <input type="text" class="form-input" id="edit-bot-name" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Description</label>
-            <input type="text" class="form-input" id="edit-bot-desc">
-          </div>
+          <div class="form-group"><label class="form-label">Bot Name</label><input type="text" class="form-input" id="edit-bot-name" required></div>
+          <div class="form-group"><label class="form-label">Description</label><input type="text" class="form-input" id="edit-bot-desc"></div>
           <div class="form-group">
             <label class="form-label">Server Tier</label>
             <div class="tier-selector">
-              <div class="tier-option" id="edit-tier-basic" data-tier="basic" onclick="selectEditTier('basic')">
-                <h4>🖥️ Basic Server</h4>
-                <div class="cost">5 coins / 2 days</div>
-              </div>
-              <div class="tier-option vip" id="edit-tier-vip" data-tier="vip" onclick="selectEditTier('vip')">
-                <h4>⭐ VIP Server</h4>
-                <div class="cost">200 coins</div>
-              </div>
+              <div class="tier-option" id="edit-tier-basic" data-tier="basic" onclick="selectEditTier('basic')"><h4>🖥 Basic</h4><div class="cost">5 coins / 2 days</div></div>
+              <div class="tier-option vip" id="edit-tier-vip" data-tier="vip" onclick="selectEditTier('vip')"><h4>⭐ VIP</h4><div class="cost">200 coins</div></div>
             </div>
           </div>
         </form>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-danger" onclick="closeModal('edit-modal')">Cancel</button>
-        <button class="btn btn-edit" onclick="saveEdit()">💾 Save Changes</button>
+        <button class="btn btn-stop" onclick="closeModal('edit-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveEdit()">Save Changes</button>
       </div>
     </div>
   </div>
 
-  <!-- Redeem Code Modal -->
+  <!-- REDEEM MODAL -->
   <div class="modal-overlay" id="redeem-modal">
-    <div class="modal">
+    <div class="modal" style="max-width:400px">
       <div class="modal-header">
         <h3 class="modal-title">🎟️ Redeem Code</h3>
-        <button class="modal-close" onclick="closeModal('redeem-modal')">&times;</button>
+        <button class="modal-close" onclick="closeModal('redeem-modal')">×</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">Enter Redemption Code</label>
-          <input type="text" class="form-input" id="redeem-code" placeholder="CODE-XXXX-XXXX" style="text-transform: uppercase;">
-          <p class="form-hint">Enter a valid code to receive coins or bot time</p>
+          <label class="form-label">Enter Code</label>
+          <input type="text" class="form-input" id="redeem-code-input" placeholder="XXXXXXXXXXXX" style="text-transform:uppercase;letter-spacing:3px;text-align:center;font-size:16px;" />
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-danger" onclick="closeModal('redeem-modal')">Cancel</button>
-        <button class="btn btn-add" onclick="redeemCode()">✨ Redeem</button>
+        <button class="btn btn-stop" onclick="closeModal('redeem-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="redeemCode()">✨ Redeem</button>
       </div>
     </div>
   </div>
 
-  <!-- Log Modal -->
+  <!-- LOG MODAL -->
   <div class="modal-overlay" id="log-modal">
-    <div class="modal" style="max-width: 700px;">
+    <div class="modal" style="max-width:700px">
       <div class="modal-header">
-        <h3 class="modal-title">📋 Bot Logs - <span id="log-bot-name">Bot</span></h3>
-        <button class="modal-close" onclick="closeModal('log-modal')">&times;</button>
+        <h3 class="modal-title">📋 Bot Logs — <span id="log-bot-name">Bot</span></h3>
+        <button class="modal-close" onclick="closeModal('log-modal')">×</button>
       </div>
       <div class="modal-body">
-        <div class="log-preview" id="log-content" style="max-height: 400px;">
-          Loading logs...
-        </div>
-        <p class="form-hint" id="log-notice" style="margin-top: 12px;"></p>
+        <div class="log-preview" id="log-content">Loading logs...</div>
+        <p class="form-hint" id="log-notice" style="margin-top:10px;"></p>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-danger" onclick="closeModal('log-modal')">Close</button>
+        <button class="btn btn-stop" onclick="closeModal('log-modal')">Close</button>
       </div>
     </div>
   </div>
@@ -765,5 +777,6 @@
       return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
   </script>
+
 </body>
 </html>
