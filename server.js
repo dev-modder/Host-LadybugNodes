@@ -1973,7 +1973,7 @@ app.get('/api/bot-features', (req, res) => {
         icon: '👥',
         commands: [
           { cmd: '.warn @user [reason]', desc: 'Warn a group member' },
-          { cmd: '.warns @user', desc: 'Check a member's warnings' },
+          { cmd: '.warns @user', desc: "Check a member's warnings" },
           { cmd: '.clearwarn @user', desc: 'Clear all warnings for a member' },
           { cmd: '.setwarnlimit N', desc: 'Set auto-kick threshold' },
           { cmd: '.kick @user', desc: 'Remove a member from the group' },
