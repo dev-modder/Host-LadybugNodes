@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: ladybugnodes
+    name: novaspark
     runtime: node
     buildCommand: npm install
     startCommand: node server.js

@@ -20,7 +20,7 @@ const multer     = require('multer');
 // ───────── Config ──────────────────────────────────────────────────────────────────────────────
 const PORT         = process.env.PORT || 3000;
 const RENDER_URL   = process.env.RENDER_URL || '';
-const JWT_SECRET   = process.env.JWT_SECRET || 'ladybugnodes-secret-change-me';
+const JWT_SECRET   = process.env.JWT_SECRET || 'novaspark-secret-change-me';
 const PING_INTERVAL_MS = 14 * 60 * 1000;  // 14 minutes
 
 // Default admin credentials (override with env vars)
@@ -869,7 +869,7 @@ cron.schedule('0 */6 * * *', runCleanup);
 
 // ───────── Start ───────────────────────────────────────────────────────────────────────────────
 server.listen(PORT, () => {
-  log(`LADYBUGNODES running on port ${PORT}`, 'ok');
+  log(`NOVASPARK running on port ${PORT}`, 'ok');
   if (RENDER_URL) log(`Keep-alive targeting: ${RENDER_URL}`, 'info');
   else log(`Set RENDER_URL env var to enable keep-alive pings`, 'warn');
 });

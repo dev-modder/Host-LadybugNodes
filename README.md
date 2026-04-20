@@ -1,4 +1,4 @@
-# 🐞 LADYBUGNODES V5
+# ⚡ NOVASPARK V5
 
 **Version:** 5.0.0  
 **Developer:** [Dev-Ntando](https://github.com/dev-modder)
@@ -57,7 +57,7 @@ A powerful multi-host dashboard for running multiple WhatsApp bots on Render.com
 ```bash
 git init
 git add .
-git commit -m "LADYBUGNODES v5.0.0"
+git commit -m "NOVASPARK v5.0.0"
 git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
 git push -u origin main
 ```
@@ -130,7 +130,7 @@ Navigate to `/bot-features.html` to see all 40+ bot commands across 6 categories
 ## 📁 Project Structure
 
 ```
-ladybugnodes/
+novaspark/
 ├── server.js
 ├── package.json
 ├── render.yaml

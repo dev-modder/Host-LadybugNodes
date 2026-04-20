@@ -22,7 +22,7 @@ const mongoose   = require('mongoose');
 // ─────────────────────────────────────────────────────────────────────────────
 const PORT         = process.env.PORT || 3000;
 const RENDER_URL   = process.env.RENDER_URL || '';
-const JWT_SECRET   = process.env.JWT_SECRET || 'ladybugnodes-secret-change-me';
+const JWT_SECRET   = process.env.JWT_SECRET || 'novaspark-secret-change-me';
 const MONGODB_URI  = process.env.MONGODB_URI || process.env.MONGO_URL || '';
 const PING_INTERVAL_MS = 14 * 60 * 1000;  // 14 minutes
 
@@ -2402,7 +2402,7 @@ async function start() {
   await connectMongoDB();
   
   server.listen(PORT, () => {
-    log(`LADYBUGNODES V5 — NovaSpark Bot Edition running on port ${PORT}`, 'ok');
+    log(`NOVASPARK V5 — NovaSpark Bot Edition running on port ${PORT}`, 'ok');
     if (RENDER_URL) log(`Keep-alive targeting: ${RENDER_URL}`, 'info');
     else log(`Set RENDER_URL env var to enable keep-alive pings`, 'warn');
   });

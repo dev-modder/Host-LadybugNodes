@@ -1,4 +1,4 @@
-# LADYBUGNODES V5 Implementation Plan
+# NOVASPARK V5 Implementation Plan
 
 ## Phase 1: Database & Backend Setup
 - [x] Add MongoDB connection and models
