@@ -103,6 +103,8 @@
         const d=await r.json();
         if(!r.ok){showErr(d.error||'Invalid credentials.');return;}
         localStorage.setItem('ns_token',d.token);
+        localStorage.setItem('lbn_token',d.token);
+        if(d.user) localStorage.setItem('lbn_user',JSON.stringify(d.user));
         window.location.href='/';
       } catch(e){showErr('Connection error. Try again.');}
       finally{btn.disabled=false;btn.textContent='Authenticate →';}
