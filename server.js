@@ -85,7 +85,7 @@ const sessionSchema = new mongoose.Schema({
   ownerName: { type: String, required: true },
   ownerNumber: { type: String, default: '' },
   sessionIdString: { type: String, required: true },
-  botName: { type: String, default: 'LadybugBot' },
+  botName: { type: String, default: 'NovaSpark Bot' },
   prefix: { type: String, default: '.' },
   timezone: { type: String, default: 'Africa/Harare' },
   botId: { type: String, default: null },
@@ -1102,7 +1102,7 @@ app.post('/api/sessions', requireAuth, async (req, res) => {
       ownerName,
       ownerNumber: ownerNumber || '',
       sessionIdString,
-      botName: botName || 'LadybugBot',
+      botName: botName || 'NovaSpark Bot',
       prefix: prefix || '.',
       timezone: timezone || 'Africa/Harare',
       botId: botId || null,
@@ -1798,7 +1798,7 @@ app.post('/api/bot/cleanup', requireAdmin, (req, res) => {
 app.post('/api/install-bot', requireAdmin, (req, res) => {
   try {
     log('Installing bot from GitHub...', 'info');
-    execSync('git clone --depth 1 https://github.com/dev-modder/Ladybug-Mini.git bot-src 2>&1 || (cd bot-src && git pull)', {
+    execSync('git clone --depth 1 https://github.com/dev-modder/NovaSpark-Bot.git bot-src 2>&1 || (cd bot-src && git pull)', {
       cwd: __dirname, stdio: 'pipe'
     });
     execSync('npm install', { cwd: path.join(__dirname, 'bot-src'), stdio: 'pipe' });
@@ -1872,88 +1872,164 @@ app.get('/api/stats', requireAuth, async (req, res) => {
 app.get('/api/bot-features', (req, res) => {
   res.json({
     version: '5.0.0',
+    botName: 'NovaSpark Bot',
     categories: [
       {
-        name: 'General',
-        icon: '🌐',
+        name: 'Free Commands',
+        icon: '🆓',
         commands: [
-          { cmd: '.menu', desc: 'Show full command list with categories' },
-          { cmd: '.ping', desc: 'Check bot response time & uptime' },
-          { cmd: '.info', desc: 'Bot info: version, owner, prefix' },
-          { cmd: '.alive', desc: 'Confirm the bot is online' },
-          { cmd: '.runtime', desc: 'Show how long the bot has been running' }
+          { cmd: '.menu [group/ai/games/media/social/tools]', desc: 'Categorized command menu' },
+          { cmd: '.homework <question>', desc: 'Detailed AI answer to any question' },
+          { cmd: '.essay <topic>', desc: 'Full structured essay on any topic' },
+          { cmd: '.summarize <text>', desc: 'Bullet-point summary of any text' },
+          { cmd: '.translate <lang> <text>', desc: 'Translate anything to any language' },
+          { cmd: '.studytips <subject>', desc: 'AI study tips for any subject' },
+          { cmd: '.math <problem>', desc: 'Step-by-step math solutions' },
+          { cmd: '.sticker', desc: 'Reply to image/video to create a sticker' },
+          { cmd: '.imagine <prompt>', desc: 'Free AI image generation' },
+          { cmd: '.tts [lang] <text>', desc: 'Text to speech — real voice note' },
+          { cmd: '.news [topic]', desc: 'Live news headlines' },
+          { cmd: '.qr <text>', desc: 'Generate a QR code' },
+          { cmd: '.currency 100 USD ZAR', desc: 'Real-time currency exchange rates' },
+          { cmd: '.poll Q | A | B | C', desc: 'Create a native WhatsApp poll' },
+          { cmd: '.fact', desc: 'Get a verified random fact' },
+          { cmd: '.urban <word>', desc: 'Urban Dictionary definition' },
+          { cmd: '.bmi <kg> <cm>', desc: 'BMI calculator with health info' },
+          { cmd: '.groupinfo', desc: 'Group analytics and member stats' },
+          { cmd: '.roast @user', desc: 'AI-generated roast' },
+          { cmd: '.weather <city>', desc: '3-day weather forecast' },
+          { cmd: '.calc <expr>', desc: 'Scientific calculator (sin, cos, sqrt, etc.)' },
+          { cmd: '.time [tz]', desc: 'World clock — 10 cities or custom timezone' }
         ]
       },
       {
-        name: 'Media & Downloads',
+        name: 'Games',
+        icon: '🎮',
+        commands: [
+          { cmd: '.wordle', desc: 'Play Wordle — guess the 5-letter word' },
+          { cmd: '.trivia', desc: 'Live trivia quiz with score tracking' },
+          { cmd: '.hangman', desc: 'Classic hangman word game' },
+          { cmd: '.rps rock/paper/scissors', desc: 'Rock Paper Scissors vs the bot' }
+        ]
+      },
+      {
+        name: 'Downloads',
         icon: '📥',
         commands: [
+          { cmd: '.tiktok <url>', desc: 'TikTok video downloader (no watermark)' },
+          { cmd: '.yt <query>', desc: 'YouTube video search and download' },
           { cmd: '.ytmp3 <url>', desc: 'Download YouTube audio as MP3' },
           { cmd: '.ytmp4 <url>', desc: 'Download YouTube video as MP4' },
-          { cmd: '.tiktok <url>', desc: 'Download TikTok video (no watermark)' },
           { cmd: '.instagram <url>', desc: 'Download Instagram Reels/Posts' },
-          { cmd: '.sticker', desc: 'Convert image/video to WhatsApp sticker' },
-          { cmd: '.toimg', desc: 'Convert sticker back to image' }
+          { cmd: '.facebook <url>', desc: 'Download Facebook videos' },
+          { cmd: '.pinterest <url>', desc: 'Download Pinterest images' },
+          { cmd: '.spotify <query>', desc: 'Spotify track info & preview' }
         ]
       },
       {
-        name: 'AI & Tools',
+        name: 'Media & Tools',
+        icon: '🛠️',
+        commands: [
+          { cmd: '.removebg', desc: 'Remove image background instantly' },
+          { cmd: '.textart <style> <text>', desc: 'Fancy ASCII text art styles' },
+          { cmd: '.viewonce', desc: 'Forward view-once messages' },
+          { cmd: '.simage', desc: 'Save sticker as image' },
+          { cmd: '.ssweb <url>', desc: 'Screenshot any website' }
+        ]
+      },
+      {
+        name: 'AI & Smart Features',
         icon: '🤖',
         commands: [
-          { cmd: '.ai <prompt>', desc: 'Chat with an AI assistant' },
-          { cmd: '.gpt <prompt>', desc: 'GPT-powered text generation' },
-          { cmd: '.img <prompt>', desc: 'AI image generation' },
-          { cmd: '.translate <lang> <text>', desc: 'Translate text to any language' },
-          { cmd: '.weather <city>', desc: 'Get current weather for any city' }
+          { cmd: '.gpt <prompt>', desc: 'GPT-4 powered text generation' },
+          { cmd: '.gemini <prompt>', desc: 'Google Gemini AI assistant' },
+          { cmd: '.imagine2 <prompt>', desc: 'Premium AI image generation' },
+          { cmd: '.remini', desc: 'AI photo enhancer — restore old images' },
+          { cmd: '.character <name>', desc: 'Chat as a famous character' },
+          { cmd: '.autochat on/off', desc: 'AI auto-reply mode for the group' }
+        ]
+      },
+      {
+        name: 'Fun & Social',
+        icon: '🎉',
+        commands: [
+          { cmd: '.joke', desc: 'Random joke from multiple categories' },
+          { cmd: '.meme', desc: 'Fetch a random meme image' },
+          { cmd: '.quote', desc: 'Inspiring quote of the moment' },
+          { cmd: '.8ball <question>', desc: 'Ask the magic 8-ball' },
+          { cmd: '.flirt', desc: 'Smooth flirt lines' },
+          { cmd: '.gayrate @user', desc: 'Fun gaydar rating (just for laughs)' },
+          { cmd: '.lyrics <song>', desc: 'Get song lyrics' },
+          { cmd: '.ship @user1 @user2', desc: 'Love compatibility score with emoji bar' },
+          { cmd: '.truth', desc: 'Truth or Dare — curated truth question' },
+          { cmd: '.dare', desc: 'Truth or Dare — dare challenge' },
+          { cmd: '.compliment [@user]', desc: 'Tag someone with a genuine compliment' },
+          { cmd: '.insult [@user]', desc: 'Funny (not cruel) savage roast' },
+          { cmd: '.motivate [@user]', desc: 'Live motivation from quotable.io' }
         ]
       },
       {
         name: 'Group Management',
         icon: '👥',
         commands: [
-          { cmd: '.kick @user', desc: 'Remove a user from the group' },
-          { cmd: '.promote @user', desc: 'Promote user to group admin' },
-          { cmd: '.demote @user', desc: 'Remove admin from a user' },
-          { cmd: '.mute', desc: 'Mute the group (admins only can send)' },
-          { cmd: '.unmute', desc: 'Unmute the group for everyone' },
-          { cmd: '.add <number>', desc: 'Add a new member to the group' },
-          { cmd: '.groupinfo', desc: 'Show group info and stats' },
-          { cmd: '.setdesc <text>', desc: 'Change the group description' },
-          { cmd: '.setname <text>', desc: 'Rename the group' },
-          { cmd: '.antilink on/off', desc: 'Auto-remove messages containing links' },
-          { cmd: '.antispam on/off', desc: 'Auto-remove spam messages' }
+          { cmd: '.warn @user [reason]', desc: 'Warn a group member' },
+          { cmd: '.warns @user', desc: 'Check a member's warnings' },
+          { cmd: '.clearwarn @user', desc: 'Clear all warnings for a member' },
+          { cmd: '.setwarnlimit N', desc: 'Set auto-kick threshold' },
+          { cmd: '.kick @user', desc: 'Remove a member from the group' },
+          { cmd: '.promote @user', desc: 'Promote member to admin' },
+          { cmd: '.demote @user', desc: 'Remove admin from a member' },
+          { cmd: '.mute', desc: 'Lock the group (admins only can send)' },
+          { cmd: '.unmute', desc: 'Unlock the group for everyone' },
+          { cmd: '.tagall [msg]', desc: 'Tag all group members' },
+          { cmd: '.hidetag [msg]', desc: 'Tag all silently (no mention visible)' },
+          { cmd: '.antilink on/off', desc: 'Auto-remove link messages' },
+          { cmd: '.antiword on/off/add/remove', desc: 'Per-group bad word filter' },
+          { cmd: '.antitoxic on/off', desc: 'AI-powered toxic message filter' },
+          { cmd: '.nightmode on/off', desc: 'Auto mute/unmute on schedule' },
+          { cmd: '.vip on/off/add/remove/list', desc: 'VIP-only mode — restrict non-VIPs' },
+          { cmd: '.ghost on/off', desc: 'Ghost mode — hide bot presence' },
+          { cmd: '.autoreact on/off', desc: 'Auto-react to messages with emoji' },
+          { cmd: '.welcome on/off [msg]', desc: 'Custom welcome messages for new members' },
+          { cmd: '.goodbye on/off [msg]', desc: 'Custom goodbye messages' },
+          { cmd: '.groupstats', desc: 'Full group analytics dashboard' },
+          { cmd: '.grouplink', desc: 'Get the group invite link' },
+          { cmd: '.resetlink', desc: 'Reset the group invite link' },
+          { cmd: '.delete', desc: 'Delete a replied message' }
         ]
       },
       {
-        name: 'Fun & Games',
-        icon: '🎮',
+        name: 'Premium Commands',
+        icon: '💎',
         commands: [
-          { cmd: '.joke', desc: 'Get a random joke' },
-          { cmd: '.meme', desc: 'Fetch a random meme image' },
-          { cmd: '.quote', desc: 'Get an inspiring quote' },
-          { cmd: '.trivia', desc: 'Start a trivia quiz' },
-          { cmd: '.truth', desc: 'Truth or dare — truth question' },
-          { cmd: '.dare', desc: 'Truth or dare — dare challenge' },
-          { cmd: '.8ball <question>', desc: 'Ask the magic 8-ball' }
+          { cmd: '.examprep <subject>', desc: 'Full exam revision with AI' },
+          { cmd: '.code <lang> <task>', desc: 'Generate working code in any language' },
+          { cmd: '.remind <time> <msg>', desc: 'Set real reminders' },
+          { cmd: '.mystats', desc: 'Personal usage analytics' },
+          { cmd: '.autostudy on <subject>', desc: 'Daily AI study tips delivered automatically' },
+          { cmd: '.setpersona <desc>', desc: 'Set a custom AI persona for the bot' }
         ]
       },
       {
-        name: 'Owner / Admin',
+        name: 'Owner Commands',
         icon: '👑',
         commands: [
-          { cmd: '.broadcast <msg>', desc: 'Broadcast message to all groups' },
-          { cmd: '.setprefix <char>', desc: 'Change bot command prefix' },
-          { cmd: '.block @user', desc: 'Block a contact' },
-          { cmd: '.unblock @user', desc: 'Unblock a contact' },
-          { cmd: '.restart', desc: 'Restart the bot process' },
-          { cmd: '.clearlog', desc: 'Clear bot activity logs' }
+          { cmd: '.broadcast <msg>', desc: 'Broadcast a message to all groups' },
+          { cmd: '.setpremium @user on/off', desc: 'Grant or revoke premium access' },
+          { cmd: '.botstats', desc: 'Full bot performance statistics' },
+          { cmd: '.antidelete on/off', desc: 'Anti-delete — resend deleted messages' },
+          { cmd: '.anticall on/off', desc: 'Auto-reject incoming calls' },
+          { cmd: '.autoread on/off', desc: 'Auto-read all messages' },
+          { cmd: '.pmblocker on/off', desc: 'Block non-contact DMs' },
+          { cmd: '.topmembers', desc: 'Show most active group members' },
+          { cmd: '.myactivity', desc: 'Your personal command activity log' }
         ]
       }
     ]
   });
 });
 
-app.get('/health', (req, res) => res.json({ status: 'ok', ts: Date.now(), version: '5.0.0' }));
+app.get('/health', (req, res) => res.json({ status: 'ok', ts: Date.now(), version: '5.0.0', botName: 'NovaSpark Bot' }));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SERVE HTML PAGES
@@ -2022,7 +2098,7 @@ function startBotProcess(sess) {
   const env = {
     ...process.env,
     SESSION_ID: sess.sessionIdString,
-    BOT_NAME: sess.botName || 'LadybugBot',
+    BOT_NAME: sess.botName || 'NovaSpark Bot',
     PREFIX: sess.prefix || '.',
     OWNER_NUMBER: sess.ownerNumber || '',
     TZ: sess.timezone || 'Africa/Harare'
@@ -2326,7 +2402,7 @@ async function start() {
   await connectMongoDB();
   
   server.listen(PORT, () => {
-    log(`LADYBUGNODES V5 running on port ${PORT}`, 'ok');
+    log(`LADYBUGNODES V5 — NovaSpark Bot Edition running on port ${PORT}`, 'ok');
     if (RENDER_URL) log(`Keep-alive targeting: ${RENDER_URL}`, 'info');
     else log(`Set RENDER_URL env var to enable keep-alive pings`, 'warn');
   });

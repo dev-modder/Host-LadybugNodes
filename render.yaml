@@ -30,3 +30,19 @@ services:
         value: "2"
       - key: LOG_VIEWING_MINUTES
         value: "20"
+      # ── NovaSpark Bot API Keys ──────────────────────────────────────────────
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: DEEPAI_API_KEY
+        sync: false
+      - key: REMOVE_BG_API_KEY
+        sync: false
+      - key: GIPHY_API_KEY
+        sync: false
+      - key: CHANNEL_LINK
+        sync: false
+      # ── NovaSpark Bot Runtime ───────────────────────────────────────────────
+      - key: PUPPETEER_SKIP_DOWNLOAD
+        value: "true"
+      - key: PUPPETEER_SKIP_CHROMIUM_DOWNLOAD
+        value: "true"
