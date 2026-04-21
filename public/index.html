@@ -145,6 +145,29 @@
       background: var(--gold-dim); border: 1px solid var(--gold-b); border-radius: 999px;
       font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--gold);
     }
+    /* Plan badges */
+    .plan-badge {
+      display: inline-flex; align-items: center; padding: 5px 12px;
+      border-radius: 999px; font-family: var(--mono); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.08em; background: var(--blue-dim); border: 1px solid var(--blue-b); color: var(--blue);
+    }
+    .plan-badge.plan-free  { background: var(--blue-dim);   border-color: var(--blue-b);   color: var(--blue); }
+    .plan-badge.plan-basic { background: var(--gold-dim);   border-color: var(--gold-b);   color: var(--gold); }
+    .plan-badge.plan-pro   { background: var(--purple-dim); border-color: rgba(188,140,255,0.4); color: var(--purple); }
+    .plan-pill {
+      display: inline-flex; align-items: center; padding: 3px 10px;
+      border-radius: 999px; font-family: var(--mono); font-size: 10px; font-weight: 700;
+    }
+    .plan-pill.plan-free  { background: var(--blue-dim);   border: 1px solid var(--blue-b);   color: var(--blue); }
+    .plan-pill.plan-basic { background: var(--gold-dim);   border: 1px solid var(--gold-b);   color: var(--gold); }
+    .plan-pill.plan-pro   { background: var(--purple-dim); border: 1px solid rgba(188,140,255,0.4); color: var(--purple); }
+    /* Upgrade modal plan cards */
+    .plan-card { border: 1px solid var(--border2); border-radius: 10px; padding: 18px; flex: 1; min-width: 140px; }
+    .plan-card.active-plan { border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+    .plan-card-name { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+    .plan-card-price { font-size: 22px; font-weight: 800; color: var(--gold); font-family: var(--mono); }
+    .plan-card-price span { font-size: 12px; color: var(--text-dim); font-weight: 400; }
+    .plan-card-bots { font-size: 12px; color: var(--text-dim); margin-top: 6px; }
     .vip-tag {
       display: inline-flex; align-items: center; padding: 3px 8px;
       background: linear-gradient(135deg, var(--gold-dim), rgba(227,179,65,0.2));
@@ -423,8 +446,8 @@
 
     <div class="sidebar-section">
       <div class="sidebar-section-label">Account</div>
-      <div class="nav-item" onclick="claimDailyReward()">
-        <span class="nav-item-icon">📅</span> Daily Reward
+      <div class="nav-item" onclick="openUpgradeModal()">
+        <span class="nav-item-icon">⬆</span> Upgrade Plan
       </div>
       <div class="nav-item" onclick="openRedeemModal()">
         <span class="nav-item-icon">🎟️</span> Redeem Code
@@ -472,9 +495,9 @@
         <span>Dashboard</span>
       </div>
       <div class="topbar-actions">
-        <div class="coin-chip">🪙 <span id="coin-count">—</span></div>
+        <span class="plan-badge" id="plan-badge">FREE</span>
         <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ New Session</button>
-        <button class="btn btn-gold btn-sm" id="vip-btn" onclick="purchaseVIP()">⭐ VIP</button>
+        <button class="btn btn-gold btn-sm" id="upgrade-btn" onclick="openUpgradeModal()">⬆ Upgrade</button>
         <button id="v5-theme-btn" onclick="v5ToggleTheme()" class="btn btn-cleanup btn-sm" title="Toggle theme">🌙</button>
         <button class="btn btn-logout btn-sm" onclick="logout()">Sign Out</button>
       </div>
@@ -502,9 +525,9 @@
           <div class="stat-sub" id="stat-active-sub">of 0 sessions</div>
         </div>
         <div class="stat-card sc-gold">
-          <div class="stat-label">My Coins</div>
-          <div class="stat-value sv-gold" id="stat-coins">—</div>
-          <div class="stat-sub">5 coins = 2 days</div>
+          <div class="stat-label">My Plan</div>
+          <div class="stat-value sv-gold" id="stat-plan">FREE</div>
+          <div class="stat-sub" id="stat-plan-sub">1 bot max</div>
         </div>
         <div class="stat-card sc-purple">
           <div class="stat-label">Referrals</div>
@@ -528,7 +551,7 @@
         <div class="referral-label">👥 Your Referral Code</div>
         <div class="referral-code" id="referral-code">—</div>
         <button class="btn btn-cleanup btn-sm" onclick="copyReferralCode()">📋 Copy</button>
-        <span class="referral-note">Earn 5 coins per friend who signs up</span>
+        <span class="referral-note">Share your referral link to help friends get started</span>
       </div>
 
       <!-- QUICK ACTIONS -->
@@ -537,19 +560,19 @@
       </div>
       <div class="action-grid">
         <div class="action-tile">
-          <div class="at-label">📅 Daily Reward</div>
-          <div class="at-desc">Claim 2 free coins every day</div>
-          <button class="btn btn-gold btn-sm" onclick="claimDailyReward()">Claim +2 🪙</button>
+          <div class="at-label">🆓 Free Plan</div>
+          <div class="at-desc">1 bot per month, no charge</div>
+          <span class="plan-pill plan-free" id="action-plan-badge">ACTIVE</span>
         </div>
         <div class="action-tile">
-          <div class="at-label">⭐ VIP Access</div>
-          <div class="at-desc">Unlock VIP servers (200 coins)</div>
-          <button class="btn btn-gold btn-sm" id="vip-btn2" onclick="purchaseVIP()">Get VIP</button>
+          <div class="at-label">💵 Basic — $5/mo</div>
+          <div class="at-desc">Up to 3 bots — contact admin to upgrade</div>
+          <button class="btn btn-gold btn-sm" onclick="openUpgradeModal()">Upgrade →</button>
         </div>
         <div class="action-tile">
-          <div class="at-label">🎟️ Redeem Code</div>
-          <div class="at-desc">Use a redemption code for coins</div>
-          <button class="btn btn-primary btn-sm" onclick="openRedeemModal()">Redeem →</button>
+          <div class="at-label">🚀 Pro — $10/mo</div>
+          <div class="at-desc">Up to 10 bots — contact admin to upgrade</div>
+          <button class="btn btn-primary btn-sm" onclick="openUpgradeModal()">Upgrade →</button>
         </div>
         <div class="action-tile">
           <div class="at-label">♻️ Recover Bots</div>
@@ -650,21 +673,21 @@
           <div style="display:grid;grid-template-columns:1fr 1fr 80px;gap:10px;align-items:end">
             <div class="form-group" style="margin:0"><label class="form-label">Username</label><input type="text" class="form-input" id="new-user-username" placeholder="username" /></div>
             <div class="form-group" style="margin:0"><label class="form-label">Password</label><input type="password" class="form-input" id="new-user-password" placeholder="password" /></div>
-            <div class="form-group" style="margin:0"><label class="form-label">Coins</label><input type="number" class="form-input" id="new-user-coins" placeholder="50" value="50" min="0" /></div>
+            <div class="form-group" style="margin:0"><label class="form-label">Plan</label><select class="form-input" id="new-user-plan"><option value="free">Free (1 bot)</option><option value="basic">Basic — $5/mo (3 bots)</option><option value="pro">Pro — $10/mo (10 bots)</option></select></div>
           </div>
           <button class="btn btn-primary" style="margin-top:12px" onclick="createUser()">Create User</button>
         </div>
         <div class="admin-panel">
           <div class="admin-panel-title">Create Redemption Code</div>
           <div style="display:grid;grid-template-columns:1fr 1fr 100px;gap:10px;align-items:end">
-            <div class="form-group" style="margin:0"><label class="form-label">Coins</label><input type="number" class="form-input" id="code-coins" placeholder="5" value="5" min="1" /></div>
-            <div class="form-group" style="margin:0"><label class="form-label">Duration (Days)</label><input type="number" class="form-input" id="code-duration" placeholder="2" value="2" min="1" /></div>
+            <div class="form-group" style="margin:0"><label class="form-label">Plan Grant</label><select class="form-input" id="code-plan"><option value="free">Free (1 bot)</option><option value="basic" selected>Basic — $5/mo</option><option value="pro">Pro — $10/mo</option></select></div>
+            <div class="form-group" style="margin:0"><label class="form-label">Duration (Days)</label><input type="number" class="form-input" id="code-duration" placeholder="30" value="30" min="1" /></div>
             <button class="btn btn-gold" style="height:40px" onclick="createRedemptionCode()">Create</button>
           </div>
           <div id="code-list" style="margin-top:14px;max-height:140px;overflow-y:auto;"></div>
         </div>
         <div class="admin-panel">
-          <div class="admin-panel-title">Users & Coins</div>
+          <div class="admin-panel-title">Users & Plans</div>
           <div id="users-table-container">Loading...</div>
         </div>
       </div>
@@ -706,6 +729,51 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-cleanup" onclick="closeRecoveryModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- UPGRADE MODAL -->
+  <div class="modal-overlay" id="upgrade-modal-overlay">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-header">
+        <span class="modal-title">⬆ Upgrade Your Plan</span>
+        <button class="modal-close" onclick="closeUpgradeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:var(--text-dim);font-size:13px;margin-bottom:18px">Choose a plan that fits your needs. Contact the admin to upgrade after payment.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <div class="plan-card" id="upgrade-card-free">
+            <div class="plan-card-name">🆓 Free</div>
+            <div class="plan-card-price">$0<span>/mo</span></div>
+            <div class="plan-card-bots">✔ 1 bot max</div>
+          </div>
+          <div class="plan-card" id="upgrade-card-basic">
+            <div class="plan-card-name">💵 Basic</div>
+            <div class="plan-card-price">$5<span>/mo</span></div>
+            <div class="plan-card-bots">✔ 3 bots max</div>
+          </div>
+          <div class="plan-card" id="upgrade-card-pro">
+            <div class="plan-card-name">🚀 Pro</div>
+            <div class="plan-card-price">$10<span>/mo</span></div>
+            <div class="plan-card-bots">✔ 10 bots max</div>
+          </div>
+        </div>
+        <div style="margin-top:18px;padding:14px;background:var(--panel2);border-radius:8px;border:1px solid var(--border)">
+          <div style="font-size:12px;color:var(--text-dim);font-family:var(--mono)">HOW TO UPGRADE</div>
+          <ol style="margin-top:8px;padding-left:18px;font-size:13px;color:var(--text);line-height:1.8">
+            <li>Pay via PayPal / card to the admin</li>
+            <li>Send your <strong>username</strong> + proof of payment to admin</li>
+            <li>Admin activates your plan within 24 hours</li>
+          </ol>
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:var(--text-muted);font-family:var(--mono)">
+          Your current plan: <span id="upgrade-current-plan" style="color:var(--accent)">FREE</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-cleanup" onclick="closeUpgradeModal()">Close</button>
       </div>
     </div>
   </div>
@@ -763,10 +831,34 @@ if (currentUser.role === 'admin') {
   document.getElementById('cleanup-btn').style.display = '';
   document.getElementById('install-btn').style.display = '';
 }
-if (currentUser.coins !== undefined) {
-  document.getElementById('coin-count').textContent = currentUser.coins;
-  document.getElementById('stat-coins').textContent = currentUser.coins;
+// Plan display init
+function updatePlanUI(plan) {
+  const PLAN_LABELS = { free: 'FREE', basic: 'BASIC · $5/mo', pro: 'PRO · $10/mo' };
+  const PLAN_MAX = { free: 1, basic: 3, pro: 10 };
+  const PLAN_CLASSES = { free: 'plan-free', basic: 'plan-basic', pro: 'plan-pro' };
+  const label = PLAN_LABELS[plan] || 'FREE';
+  const maxBots = PLAN_MAX[plan] || 1;
+  const cls = PLAN_CLASSES[plan] || 'plan-free';
+
+  const badge = document.getElementById('plan-badge');
+  if (badge) { badge.textContent = label; badge.className = 'plan-badge ' + cls; }
+  const statPlan = document.getElementById('stat-plan');
+  if (statPlan) statPlan.textContent = plan ? plan.toUpperCase() : 'FREE';
+  const statPlanSub = document.getElementById('stat-plan-sub');
+  if (statPlanSub) statPlanSub.textContent = maxBots + ' bot' + (maxBots > 1 ? 's' : '') + ' max';
+  const upgCur = document.getElementById('upgrade-current-plan');
+  if (upgCur) upgCur.textContent = label;
+  // highlight upgrade cards
+  ['free','basic','pro'].forEach(p => {
+    const card = document.getElementById('upgrade-card-' + p);
+    if (card) card.classList.toggle('active-plan', p === plan);
+  });
+  // action-plan-badge
+  const apb = document.getElementById('action-plan-badge');
+  if (apb) { apb.textContent = label; apb.className = 'plan-pill ' + cls; }
 }
+
+if (currentUser.plan) updatePlanUI(currentUser.plan);
 if (currentUser.referralCode) {
   document.getElementById('referral-code').textContent = currentUser.referralCode;
 }
@@ -781,15 +873,10 @@ async function refreshMe() {
     const u = await r.json();
     currentUser = { ...currentUser, ...u };
     localStorage.setItem('ns_user', JSON.stringify(currentUser));
-    document.getElementById('coin-count').textContent = u.coins;
-    document.getElementById('stat-coins').textContent = u.coins;
+    updatePlanUI(u.plan || 'free');
     document.getElementById('stat-referrals').textContent = u.referralCount || 0;
     document.getElementById('referral-code').textContent = u.referralCode || '—';
-    document.getElementById('user-role').textContent = u.hasVIPAccess ? 'VIP' : (u.role || '—');
-    if (u.hasVIPAccess) {
-      document.getElementById('vip-btn').disabled = true;
-      document.getElementById('vip-btn').textContent = 'VIP Active ✓';
-    }
+    document.getElementById('user-role').textContent = u.plan === 'pro' ? 'PRO' : (u.hasVIPAccess ? 'VIP' : (u.role || '—'));
   } catch {}
 }
 
@@ -830,9 +917,12 @@ function connect() {
     } else if (msg.type === 'cleanup') {
       updateCleanup(msg);
     } else if (msg.type === 'coins-updated' && msg.userId === currentUser.id) {
-      document.getElementById('coin-count').textContent = msg.coins;
-      document.getElementById('stat-coins').textContent = msg.coins;
+      // Legacy: coins updated - ignored in plan mode
       currentUser.coins = msg.coins;
+    } else if (msg.type === 'plan-updated' && msg.userId === currentUser.id) {
+      currentUser.plan = msg.plan;
+      updatePlanUI(msg.plan);
+      toast('Your plan has been updated to ' + msg.plan.toUpperCase() + '!', 'ok');
       localStorage.setItem('ns_user', JSON.stringify(currentUser));
     }
   };
@@ -903,7 +993,7 @@ async function startSession(id) {
   try {
     const r = await fetch('/api/bot/start', { method:'POST', headers: authHeaders(), body: JSON.stringify({ sessionId: id }) });
     const d = await r.json();
-    if (d.ok) toast('Bot starting… (5 coins for 2 days)', 'ok');
+    if (d.ok) toast('Bot starting…', 'ok');
     else toast(d.error || 'Failed to start', 'error');
     refreshMe();
   } catch (err) { toast('Error: ' + err.message, 'error'); }
@@ -954,36 +1044,21 @@ async function installBot() {
   } catch (err) { toast('Error: ' + err.message, 'error'); }
 }
 
-// Coin Actions
-async function claimDailyReward() {
-  try {
-    const r = await fetch('/api/coins/daily', { method:'POST', headers: authHeaders() });
-    const d = await r.json();
-    if (d.ok) {
-      toast('Daily reward claimed! +' + d.rewarded + ' coins 🎉', 'ok');
-      refreshMe();
-      launchConfetti();
-      const coinEl = document.getElementById('coin-count');
-      if (coinEl) { coinEl.classList.remove('coin-animate'); void coinEl.offsetWidth; coinEl.classList.add('coin-animate'); }
-    }
-    else toast(d.error || 'Failed to claim', 'error');
-  } catch (err) { toast('Error: ' + err.message, 'error'); }
+// Plan / Upgrade Actions
+function openUpgradeModal() {
+  updatePlanUI(currentUser.plan || 'free');
+  document.getElementById('upgrade-modal-overlay').classList.add('active');
 }
+function closeUpgradeModal() {
+  document.getElementById('upgrade-modal-overlay').classList.remove('active');
+}
+document.getElementById('upgrade-modal-overlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeUpgradeModal();
+});
 
-async function purchaseVIP() {
-  if (!confirm('Purchase VIP access for 200 coins?')) return;
-  try {
-    const r = await fetch('/api/coins/purchase-vip', { method:'POST', headers: authHeaders() });
-    const d = await r.json();
-    if (d.ok) { 
-      toast('VIP access purchased! You now have VIP servers!', 'ok'); 
-      refreshMe();
-      document.getElementById('vip-btn').disabled = true;
-      document.getElementById('vip-btn').textContent = 'VIP Active ✓';
-    }
-    else toast(d.error || 'Failed to purchase', 'error');
-  } catch (err) { toast('Error: ' + err.message, 'error'); }
-}
+// Legacy stubs (keep so old links don't crash)
+function claimDailyReward() { openUpgradeModal(); }
+function purchaseVIP() { openUpgradeModal(); }
 
 // Session Modal
 function loadPanelBotOptions() {
@@ -1073,14 +1148,15 @@ async function loadUsersTable() {
     const users = await r.json();
     if (!users.length) { container.innerHTML = '<p style="color:var(--text-dim);font-family:var(--mono);font-size:12px">No users found.</p>'; return; }
 
-    container.innerHTML = '<table class="users-table"><thead><tr><th>Username</th><th>Role</th><th>Coins</th><th>Referrals</th><th>Add Coins</th><th>Action</th></tr></thead><tbody>' +
+    const PLAN_COLOR = { free: 'var(--blue)', basic: 'var(--gold)', pro: 'var(--purple)' };
+    container.innerHTML = '<table class="users-table"><thead><tr><th>Username</th><th>Role</th><th>Plan</th><th>Referrals</th><th>Set Plan</th><th>Action</th></tr></thead><tbody>' +
       users.map(u => '<tr data-uid="' + u.id + '">' +
         '<td style="color:var(--text)">' + escHtml(u.username) + (u.hasVIPAccess ? ' <span style="color:var(--gold)">VIP</span>' : '') + '</td>' +
         '<td><span style="color:' + (u.role==='admin'?'var(--gold)':'var(--blue)') + '">' + u.role + '</span></td>' +
-        '<td style="color:var(--gold);font-weight:700">🪙 ' + u.coins + '</td>' +
+        '<td style="color:' + (PLAN_COLOR[u.plan] || 'var(--blue)') + ';font-weight:700">' + ((u.plan || 'free').toUpperCase()) + '</td>' +
         '<td style="color:var(--purple)">' + (u.referralCount || 0) + '</td>' +
-        '<td><div class="add-coin-row"><input type="number" placeholder="±amount" id="coins-' + u.id + '" /><button class="btn btn-add" style="padding:6px 10px;font-size:11px" onclick="addCoins(\'' + u.id + '\')">Add</button></div></td>' +
-        '<td>' + (u.role !== 'admin' ? '<button class="btn btn-danger" style="padding:6px 10px;font-size:11px" onclick="deleteUser(\'' + u.id + '\', \'' + escHtml(u.username) + '\')">Delete</button>' : '—') + '</td>' +
+        '<td>' + (u.role !== 'admin' ? '<div class="add-coin-row"><select id="plan-sel-' + u.id + '" style="background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:11px"><option value="free"' + (u.plan==='free'?' selected':'') + '>Free</option><option value="basic"' + (u.plan==='basic'?' selected':'') + '>Basic $5</option><option value="pro"' + (u.plan==='pro'?' selected':'') + '>Pro $10</option></select><button class="btn btn-add" style="padding:6px 10px;font-size:11px" onclick="setUserPlan(&apos;' + u.id + '&apos;)">Set</button></div>' : '&mdash;') + '</td>' +
+        '<td>' + (u.role !== 'admin' ? '<button class="btn btn-danger" style="padding:6px 10px;font-size:11px" onclick="deleteUser(&apos;' + u.id + '&apos;, &apos;' + escHtml(u.username) + '&apos;)">Delete</button>' : '&mdash;') + '</td>' +
       '</tr>').join('') + '</tbody></table>';
   } catch (err) {
     container.innerHTML = '<p style="color:var(--red);font-family:var(--mono);font-size:12px">Error: ' + err.message + '</p>';
@@ -1089,27 +1165,31 @@ async function loadUsersTable() {
 
 async function createUser() {
   const username = document.getElementById('new-user-username').value.trim();
-  const password = document.getElementById('new-user-password').value;
-  const coins = Number(document.getElementById('new-user-coins').value) || 50;
-  if (!username || !password) { toast('Username and password required', 'error'); return; }
-
+  const passwordEl = document.getElementById('new-user-password').value;
+  const plan = document.getElementById('new-user-plan').value || 'free';
+  if (!username || !passwordEl) { toast('Username and password required', 'error'); return; }
   try {
-    const r = await fetch('/api/users', { method:'POST', headers: authHeaders(), body: JSON.stringify({ username, password, coins }) });
+    const r = await fetch('/api/users', { method:'POST', headers: authHeaders(), body: JSON.stringify({ username, password: passwordEl, plan }) });
     const d = await r.json();
-    if (d.ok) { toast('User "' + username + '" created with ' + coins + ' coins', 'ok'); loadUsersTable(); }
-    else toast(d.error || 'Failed', 'error');
+    if (d.ok) {
+      toast('User "' + username + '" created on ' + plan.toUpperCase() + ' plan', 'ok');
+      if (d.user && d.user.id) await fetch('/api/plans/set', { method:'POST', headers: authHeaders(), body: JSON.stringify({ userId: d.user.id, plan }) }).catch(()=>{});
+      loadUsersTable();
+    } else toast(d.error || 'Failed', 'error');
   } catch (err) { toast('Error: ' + err.message, 'error'); }
 }
 
 async function addCoins(userId) {
-  const input = document.getElementById('coins-' + userId);
-  const amount = Number(input.value);
-  if (!amount) { toast('Enter an amount (positive or negative)', 'warn'); return; }
+  // Legacy stub - no longer used
+}
 
+async function setUserPlan(userId) {
+  const select = document.getElementById('plan-sel-' + userId);
+  const plan = select.value;
   try {
-    const r = await fetch('/api/coins/add', { method:'POST', headers: authHeaders(), body: JSON.stringify({ userId, amount }) });
+    const r = await fetch('/api/plans/set', { method:'POST', headers: authHeaders(), body: JSON.stringify({ userId, plan }) });
     const d = await r.json();
-    if (d.ok) { toast('Coins updated! New balance: ' + d.coins, 'ok'); input.value = ''; loadUsersTable(); }
+    if (d.ok) { toast('Plan set to ' + plan.toUpperCase() + ' (' + d.maxBots + ' bots max)', 'ok'); loadUsersTable(); }
     else toast(d.error || 'Failed', 'error');
   } catch (err) { toast('Error: ' + err.message, 'error'); }
 }
@@ -1142,12 +1222,12 @@ async function loadRedemptionCodes() {
 }
 
 async function createRedemptionCode() {
-  const coins = Number(document.getElementById('code-coins').value) || 5;
-  const durationDays = Number(document.getElementById('code-duration').value) || 2;
+  const plan = document.getElementById('code-plan').value || 'basic';
+  const durationDays = Number(document.getElementById('code-duration').value) || 30;
   try {
-    const r = await fetch('/api/codes', { method:'POST', headers: authHeaders(), body: JSON.stringify({ coins, durationDays }) });
+    const r = await fetch('/api/codes', { method:'POST', headers: authHeaders(), body: JSON.stringify({ plan, durationDays }) });
     const d = await r.json();
-    if (d.ok) { toast('Code created: ' + d.code, 'ok'); loadRedemptionCodes(); }
+    if (d.ok) { toast('Code created: ' + d.code + ' (' + plan + ', ' + durationDays + ' days)', 'ok'); loadRedemptionCodes(); }
     else toast(d.error || 'Failed', 'error');
   } catch (err) { toast('Error: ' + err.message, 'error'); }
 }
@@ -1165,7 +1245,7 @@ async function redeemCode() {
   try {
     const r = await fetch('/api/codes/redeem', { method:'POST', headers: authHeaders(), body: JSON.stringify({ code }) });
     const d = await r.json();
-    if (d.ok) { toast('Code redeemed! +' + d.rewarded + ' coins', 'ok'); closeRedeemModal(); refreshMe(); }
+    if (d.ok) { toast('Code redeemed! Upgraded to ' + (d.plan || '').toUpperCase() + ' plan 🎉', 'ok'); closeRedeemModal(); refreshMe(); launchConfetti(); }
     else toast(d.error || 'Failed', 'error');
   } catch (err) { toast('Error: ' + err.message, 'error'); }
 }

@@ -136,7 +136,7 @@
     <div class="topbar">
       <div class="topbar-breadcrumb">Dashboard <span style="color:var(--text-muted);margin:0 4px">/</span> <span>🏆 Leaderboard</span></div>
       <div class="topbar-actions">
-        <div class="coin-chip">🪙 <span id="top-coins">—</span></div>
+        <span class="coin-chip" id="top-plan" style="font-family:var(--mono)">FREE</span>
         <button class="btn btn-secondary" onclick="logout()">Logout</button>
       </div>
     </div>
@@ -144,7 +144,7 @@
     <div class="page">
       <div class="podium-section">
         <div class="podium-title">🏆 Top Players</div>
-        <div class="podium-sub">// Ranked by total coins earned on the platform</div>
+        <div class="podium-sub">// Ranked by number of referrals</div>
         <div class="podium" id="podium">
           <div class="skeleton" style="width:90px;height:160px;border-radius:10px;"></div>
           <div class="skeleton" style="width:90px;height:200px;border-radius:10px;opacity:0.8"></div>
@@ -162,7 +162,7 @@
 
       <div class="lb-table">
         <div class="lb-header">
-          <div>Rank</div><div>User</div><div>🪙 Coins</div><div>👥 Referrals</div><div>Tier</div>
+          <div>Rank</div><div>User</div><div>👥 Referrals</div><div>📋 Plan</div><div>Tier</div>
         </div>
         <div id="lb-body">
           ${[1,2,3,4,5].map(()=>`<div class="lb-row"><div class="skeleton" style="height:20px;width:40px"></div><div class="skeleton" style="height:20px;width:60%"></div><div class="skeleton" style="height:20px;width:60px"></div><div class="skeleton" style="height:20px;width:40px"></div><div></div></div>`).join('')}
@@ -186,7 +186,7 @@
         document.getElementById('sb-avatar').textContent=(u.username||'?')[0].toUpperCase();
         document.getElementById('sb-name').textContent=u.username;
         document.getElementById('sb-role').textContent=u.role;
-        document.getElementById('top-coins').textContent=u.coins||0;
+        document.getElementById('top-plan').textContent=(u.plan||'free').toUpperCase();
       }catch{}
 
       try{
@@ -198,7 +198,7 @@
           document.getElementById('my-rank-banner').style.display='flex';
           document.getElementById('my-rank-num').textContent='#'+data.myRank;
           const me=data.leaderboard.find(u=>u.username===meUsername);
-          document.getElementById('my-rank-text').textContent=me?`${me.coins} coins · ${me.referrals} referrals`:'';
+          document.getElementById('my-rank-text').textContent=me?`${me.referrals} referrals · rank #${me.rank}`:'';
         }
       }catch{document.getElementById('lb-body').innerHTML='<div style="padding:20px;color:var(--text-muted);font-family:var(--mono);font-size:13px">Failed to load leaderboard.</div>';}
     }
@@ -211,7 +211,7 @@
         const rank=u.displayRank;
         return `<div class="podium-place rank-${rank}" style="animation-delay:${delays[i]}s">
           <div class="podium-user">${u.username}</div>
-          <div class="podium-coins">🪙 ${u.coins}</div>
+          <div class="podium-coins">👥 ${u.referrals} referrals</div>
           <div class="podium-avatar">
             ${rank===1?'<span class="crown">👑</span>':''}
             ${u.username[0].toUpperCase()}
@@ -233,7 +233,7 @@
               <div class="lb-username">${u.username}${u.username===meUsername?' <span style="color:var(--accent2);font-size:10px">(you)</span>':''}</div>
             </div>
           </div>
-          <div class="lb-coins">🪙 ${u.coins.toLocaleString()}</div>
+          <div class="lb-coins">👥 ${u.referrals}</div>
           <div class="lb-referrals">👥 ${u.referrals}</div>
           <div>${u.vip?'<span class="vip-badge">👑 VIP</span>':''}</div>
         </div>`).join('');

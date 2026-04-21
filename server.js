@@ -39,13 +39,22 @@ const loginAttempts = new Map(); // key = username, val = { count, lockedUntil }
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
 
-// Coin costs and rewards
-const COIN_COST_START = 5;        // 5 coins to run bot for 2 days
-const COIN_DAILY_REWARD = 2;      // 2 coins per day
-const COIN_REFERRAL_REWARD = 5;   // 5 coins per referral
-const VIP_SERVER_COST = 200;      // 200 coins for VIP server
-const BOT_DURATION_DAYS = 2;      // Bot runs for 2 days
-const LOG_VIEWING_MINUTES = 20;   // Users can see logs for 20 minutes
+// ── PLAN DEFINITIONS ─────────────────────────────────────────────────────────
+// Pricing is enforced here. Payments are handled externally (e.g. PayPal/Stripe).
+// Admin manually upgrades users via /api/plans/set or the admin panel.
+const PLANS = {
+  free:  { name: 'Free',  price: 0,  maxBots: 1,  label: 'FREE' },
+  basic: { name: 'Basic', price: 5,  maxBots: 3,  label: '$5/mo' },
+  pro:   { name: 'Pro',   price: 10, maxBots: 10, label: '$10/mo' }
+};
+
+// Legacy coin constants kept for backward-compat (coins still exist but are cosmetic)
+const COIN_COST_START = 5;
+const COIN_DAILY_REWARD = 2;
+const COIN_REFERRAL_REWARD = 5;
+const VIP_SERVER_COST = 200;
+const BOT_DURATION_DAYS = 2;
+const LOG_VIEWING_MINUTES = 20;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MONGODB CONNECTION
@@ -72,7 +81,8 @@ const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, enum: ['admin', 'user'], default: 'user' },
-  coins: { type: Number, default: 50 },
+  plan: { type: String, enum: ['free', 'basic', 'pro'], default: 'free' },
+  coins: { type: Number, default: 0 },
   whatsappNumber: { type: String, default: null, sparse: true },
   referredBy: { type: String, default: null },
   referralCode: { type: String, default: () => uuidv4().slice(0, 8).toUpperCase() },
@@ -132,8 +142,9 @@ const deletedBotSchema = new mongoose.Schema({
 
 const redemptionCodeSchema = new mongoose.Schema({
   code: { type: String, required: true, unique: true },
-  coins: { type: Number, default: 5 },
-  durationDays: { type: Number, default: BOT_DURATION_DAYS },
+  coins: { type: Number, default: 0 },
+  plan: { type: String, enum: ['free', 'basic', 'pro'], default: 'basic' },
+  durationDays: { type: Number, default: 30 },
   usedBy: { type: String, default: null },
   usedAt: { type: Date, default: null },
   createdBy: { type: String, required: true },
@@ -273,7 +284,8 @@ async function ensureAdminExistsMongo() {
       username: ADMIN_USERNAME,
       password: hash,
       role: 'admin',
-      coins: 999999999,
+      plan: 'pro',
+      coins: 0,
       referralCode: uuidv4().slice(0, 8).toUpperCase()
     });
     log(`Admin user "${ADMIN_USERNAME}" created in MongoDB`, 'ok');
@@ -333,7 +345,8 @@ function ensureAdminExists() {
       username: ADMIN_USERNAME,
       password: hash,
       role: 'admin',
-      coins: 999999999999999,
+      plan: 'pro',
+      coins: 0,
       referralCode: uuidv4().slice(0, 8).toUpperCase(),
       referralCount: 0,
       hasVIPAccess: true,
@@ -500,7 +513,7 @@ app.post('/api/auth/signup', async (req, res) => {
       const newReferralCode = uuidv4().slice(0, 8).toUpperCase();
       
       let referredBy = null;
-      let initialCoins = 50;
+      let initialCoins = 0;
       
       if (referralCode) {
         const referrer = await User.findOne({ referralCode });
@@ -517,6 +530,7 @@ app.post('/api/auth/signup', async (req, res) => {
       const user = await User.create({
         username,
         password: hash,
+        plan: 'free',
         coins: initialCoins,
         referralCode: newReferralCode,
         referredBy
@@ -532,6 +546,7 @@ app.post('/api/auth/signup', async (req, res) => {
           id: user._id, 
           username: user.username, 
           role: user.role, 
+          plan: user.plan || 'free',
           coins: user.coins,
           referralCode: user.referralCode,
           hasVIPAccess: user.hasVIPAccess
@@ -548,7 +563,7 @@ app.post('/api/auth/signup', async (req, res) => {
       const newReferralCode = uuidv4().slice(0, 8).toUpperCase();
       
       let referredBy = null;
-      let initialCoins = 50;
+      let initialCoins = 0;
       
       if (referralCode) {
         const referrer = users.find(u => u.referralCode === referralCode);
@@ -566,6 +581,7 @@ app.post('/api/auth/signup', async (req, res) => {
         username,
         password: hash,
         role: 'user',
+        plan: 'free',
         coins: initialCoins,
         referralCode: newReferralCode,
         referredBy,
@@ -651,6 +667,7 @@ app.post('/api/auth/login', async (req, res) => {
         id: userId, 
         username: user.username, 
         role: user.role, 
+        plan: user.plan || 'free',
         coins: user.coins,
         referralCode: user.referralCode,
         hasVIPAccess: user.hasVIPAccess
@@ -672,6 +689,7 @@ app.get('/api/auth/me', requireAuth, async (req, res) => {
         id: user._id,
         username: user.username,
         role: user.role,
+        plan: user.plan || 'free',
         coins: user.coins,
         referralCode: user.referralCode,
         referralCount: user.referralCount,
@@ -769,17 +787,84 @@ app.get('/api/leaderboard', requireAuth, async (req, res) => {
   try {
     let users = [];
     if (useMongoDB) {
-      const all = await User.find({}, 'username coins referralCount hasVIPAccess createdAt').sort({ coins: -1 }).limit(50);
-      users = all.map((u, i) => ({ rank: i+1, username: u.username, coins: u.coins, referrals: u.referralCount||0, vip: u.hasVIPAccess, joined: u.createdAt }));
+      const all = await User.find({}, 'username plan referralCount hasVIPAccess createdAt').sort({ referralCount: -1 }).limit(50);
+      users = all.map((u, i) => ({ rank: i+1, username: u.username, plan: u.plan||'free', referrals: u.referralCount||0, vip: u.hasVIPAccess, joined: u.createdAt }));
     } else {
       const all = loadUsers();
-      users = [...all].sort((a,b) => (b.coins||0)-(a.coins||0)).slice(0,50).map((u, i) => ({ rank: i+1, username: u.username, coins: u.coins||0, referrals: u.referralCount||0, vip: u.hasVIPAccess||false, joined: u.createdAt }));
+      users = [...all].sort((a,b) => (b.referralCount||0)-(a.referralCount||0)).slice(0,50).map((u, i) => ({ rank: i+1, username: u.username, plan: u.plan||'free', referrals: u.referralCount||0, vip: u.hasVIPAccess||false, joined: u.createdAt }));
     }
     // Mark current user rank
     const meIdx = users.findIndex(u => u.username === req.user.username);
-    res.json({ leaderboard: users, myRank: meIdx === -1 ? null : meIdx+1 });
+    const me = meIdx >= 0 ? users[meIdx] : null;
+    res.json({ leaderboard: users, myRank: meIdx === -1 ? null : meIdx+1, me });
   } catch(err) {
     res.status(500).json({ error: 'Failed to load leaderboard' });
+  }
+});
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PLAN ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Public: return all plan definitions
+app.get('/api/plans', (req, res) => {
+  res.json(PLANS);
+});
+
+// Auth: get current user's plan info
+app.get('/api/plans/me', requireAuth, async (req, res) => {
+  try {
+    let user;
+    if (useMongoDB) {
+      user = await User.findById(req.user.id);
+    } else {
+      const users = loadUsers();
+      user = users.find(u => u.id === req.user.id);
+    }
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    const plan = user.plan || 'free';
+    const planInfo = PLANS[plan] || PLANS.free;
+    // Count existing bots
+    let existingCount = 0;
+    if (useMongoDB) {
+      existingCount = await Session.countDocuments({ ownerId: req.user.id });
+    } else {
+      const sessions = loadSessions();
+      existingCount = sessions.filter(s => s.ownerId === req.user.id).length;
+    }
+    return res.json({ plan, ...planInfo, usedBots: existingCount });
+  } catch (err) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin: set a user's plan
+app.post('/api/plans/set', requireAdmin, async (req, res) => {
+  const { userId, username, plan } = req.body || {};
+  if (!plan || !PLANS[plan]) return res.status(400).json({ error: 'Invalid plan. Must be: free, basic, or pro' });
+  if (!userId && !username) return res.status(400).json({ error: 'userId or username required' });
+  try {
+    if (useMongoDB) {
+      const user = userId ? await User.findById(userId) : await User.findOne({ username });
+      if (!user) return res.status(404).json({ error: 'User not found' });
+      user.plan = plan;
+      user.hasVIPAccess = plan === 'pro';
+      await user.save();
+      log(`Admin set plan "${plan}" for user "${user.username}"`, 'ok');
+      return res.json({ ok: true, plan, maxBots: PLANS[plan].maxBots });
+    } else {
+      const users = loadUsers();
+      const user = userId ? users.find(u => u.id === userId) : users.find(u => u.username === username);
+      if (!user) return res.status(404).json({ error: 'User not found' });
+      user.plan = plan;
+      user.hasVIPAccess = plan === 'pro';
+      saveUsers(users);
+      log(`Admin set plan "${plan}" for user "${user.username}"`, 'ok');
+      return res.json({ ok: true, plan, maxBots: PLANS[plan].maxBots });
+    }
+  } catch (err) {
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -947,7 +1032,8 @@ app.post('/api/coins/add', requireAdmin, async (req, res) => {
 
 // Admin: Create redemption code
 app.post('/api/codes', requireAdmin, async (req, res) => {
-  const { coins = 5, durationDays = BOT_DURATION_DAYS } = req.body || {};
+  const { plan = 'basic', durationDays = 30, coins = 0 } = req.body || {};
+  if (!PLANS[plan]) return res.status(400).json({ error: 'Invalid plan' });
   
   try {
     const code = uuidv4().slice(0, 12).toUpperCase();
@@ -955,7 +1041,8 @@ app.post('/api/codes', requireAdmin, async (req, res) => {
     if (useMongoDB) {
       await RedemptionCode.create({
         code,
-        coins: Number(coins),
+        plan,
+        coins: 0,
         durationDays: Number(durationDays),
         createdBy: req.user.id
       });
@@ -964,7 +1051,8 @@ app.post('/api/codes', requireAdmin, async (req, res) => {
       codes.push({
         id: uuidv4(),
         code,
-        coins: Number(coins),
+        plan,
+        coins: 0,
         durationDays: Number(durationDays),
         createdBy: req.user.id,
         usedBy: null,
@@ -974,8 +1062,8 @@ app.post('/api/codes', requireAdmin, async (req, res) => {
       saveRedemptionCodes(codes);
     }
     
-    log(`Admin created redemption code "${code}" worth ${coins} coins`, 'ok');
-    return res.json({ ok: true, code, coins, durationDays });
+    log(`Admin created redemption code "${code}" for ${plan} plan (${durationDays} days)`, 'ok');
+    return res.json({ ok: true, code, plan, durationDays });
   } catch (err) {
     log(`Code creation error: ${err.message}`, 'error');
     return res.status(500).json({ error: 'Internal server error' });
@@ -1010,17 +1098,19 @@ app.post('/api/codes/redeem', requireAuth, async (req, res) => {
       const user = await User.findById(req.user.id);
       if (!user) return res.status(404).json({ error: 'User not found' });
       
-      user.coins += redemptionCode.coins;
+      const grantedPlan = redemptionCode.plan || 'basic';
+      user.plan = grantedPlan;
+      user.hasVIPAccess = grantedPlan === 'pro';
       await user.save();
       
       redemptionCode.usedBy = req.user.id;
       redemptionCode.usedAt = new Date();
       await redemptionCode.save();
       
-      broadcast({ type: 'coins-updated', userId: user._id, coins: user.coins });
-      log(`User "${user.username}" redeemed code "${code}" for ${redemptionCode.coins} coins`, 'ok');
+      broadcast({ type: 'plan-updated', userId: user._id.toString(), plan: grantedPlan });
+      log(`User "${user.username}" redeemed code "${code}" — upgraded to ${grantedPlan} plan`, 'ok');
       
-      return res.json({ ok: true, coins: user.coins, rewarded: redemptionCode.coins });
+      return res.json({ ok: true, plan: grantedPlan, maxBots: PLANS[grantedPlan].maxBots });
     } else {
       const codes = loadRedemptionCodes();
       const redemptionCode = codes.find(c => c.code === code);
@@ -1031,17 +1121,19 @@ app.post('/api/codes/redeem', requireAuth, async (req, res) => {
       const user = users.find(u => u.id === req.user.id);
       if (!user) return res.status(404).json({ error: 'User not found' });
       
-      user.coins = (user.coins || 0) + redemptionCode.coins;
+      const grantedPlan = redemptionCode.plan || 'basic';
+      user.plan = grantedPlan;
+      user.hasVIPAccess = grantedPlan === 'pro';
       saveUsers(users);
       
       redemptionCode.usedBy = req.user.id;
       redemptionCode.usedAt = new Date().toISOString();
       saveRedemptionCodes(codes);
       
-      broadcast({ type: 'coins-updated', userId: user.id, coins: user.coins });
-      log(`User "${user.username}" redeemed code "${code}" for ${redemptionCode.coins} coins`, 'ok');
+      broadcast({ type: 'plan-updated', userId: user.id, plan: grantedPlan });
+      log(`User "${user.username}" redeemed code "${code}" — upgraded to ${grantedPlan} plan`, 'ok');
       
-      return res.json({ ok: true, coins: user.coins, rewarded: redemptionCode.coins });
+      return res.json({ ok: true, plan: grantedPlan, maxBots: PLANS[grantedPlan].maxBots });
     }
   } catch (err) {
     log(`Code redemption error: ${err.message}`, 'error');
@@ -1059,6 +1151,7 @@ app.get('/api/users', requireAdmin, async (req, res) => {
       id: u.id || u._id,
       username: u.username,
       role: u.role,
+      plan: u.plan || 'free',
       coins: u.coins,
       referralCode: u.referralCode,
       referralCount: u.referralCount || 0,
@@ -1158,7 +1251,7 @@ app.post('/api/users', requireAdmin, async (req, res) => {
 
 // Admin updates a user
 app.put('/api/users/:id', requireAdmin, async (req, res) => {
-  const { coins, role, hasVIPAccess } = req.body || {};
+  const { coins, role, hasVIPAccess, plan } = req.body || {};
   
   try {
     if (useMongoDB) {
@@ -1168,6 +1261,7 @@ app.put('/api/users/:id', requireAdmin, async (req, res) => {
       if (coins !== undefined) user.coins = coins;
       if (role !== undefined) user.role = role;
       if (hasVIPAccess !== undefined) user.hasVIPAccess = hasVIPAccess;
+      if (plan !== undefined && PLANS[plan]) user.plan = plan;
       
       await user.save();
       
@@ -1191,6 +1285,7 @@ app.put('/api/users/:id', requireAdmin, async (req, res) => {
       if (coins !== undefined) users[userIndex].coins = coins;
       if (role !== undefined) users[userIndex].role = role;
       if (hasVIPAccess !== undefined) users[userIndex].hasVIPAccess = hasVIPAccess;
+      if (plan !== undefined && PLANS[plan]) users[userIndex].plan = plan;
       
       saveUsers(users);
       
@@ -1260,6 +1355,36 @@ app.post('/api/sessions', requireAuth, async (req, res) => {
   if (!ownerName || !sessionIdString) return res.status(400).json({ error: 'ownerName and sessionIdString required' });
 
   try {
+    // ── Plan-based bot limit check ────────────────────────────────────────
+    if (req.user.role !== 'admin') {
+      let currentUser;
+      if (useMongoDB) {
+        currentUser = await User.findById(req.user.id);
+      } else {
+        const users = loadUsers();
+        currentUser = users.find(u => u.id === req.user.id);
+      }
+      const userPlan = (currentUser && currentUser.plan) ? currentUser.plan : 'free';
+      const planInfo = PLANS[userPlan] || PLANS.free;
+      // Count existing sessions for this user
+      let existingCount = 0;
+      if (useMongoDB) {
+        existingCount = await Session.countDocuments({ ownerId: req.user.id });
+      } else {
+        const sessions = loadSessions();
+        existingCount = sessions.filter(s => s.ownerId === req.user.id).length;
+      }
+      if (existingCount >= planInfo.maxBots) {
+        return res.status(402).json({
+          error: `Plan limit reached. Your ${planInfo.name} plan allows ${planInfo.maxBots} bot(s). Upgrade your plan to add more.`,
+          plan: userPlan,
+          maxBots: planInfo.maxBots,
+          currentBots: existingCount
+        });
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────
+
     const sessionData = {
       ownerId: req.user.id,
       ownerName,
@@ -1696,48 +1821,8 @@ app.post('/api/panel-bots/:botId/start', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    // Coin check (skip for admin or VIP)
-    if (req.user.role !== 'admin') {
-      let user;
-      if (useMongoDB) {
-        user = await User.findById(req.user.id);
-      } else {
-        const users = loadUsers();
-        user = users.find(u => u.id === req.user.id);
-      }
-      
-      if (!user || user.coins < COIN_COST_START) {
-        return res.status(402).json({ error: `Not enough coins. Starting a bot costs ${COIN_COST_START} coins for ${BOT_DURATION_DAYS} days.` });
-      }
-      
-      // Deduct coins and set paid duration
-      user.coins -= COIN_COST_START;
-      const paidUntil = new Date(Date.now() + BOT_DURATION_DAYS * 24 * 60 * 60 * 1000);
-      
-      if (useMongoDB) {
-        await User.findByIdAndUpdate(user._id, { $set: { coins: user.coins } });
-        await BotConfig.findByIdAndUpdate(config._id, { $set: { paidUntil, startTime: new Date() } });
-      } else {
-        const users = loadUsers();
-        const userIndex = users.findIndex(u => u.id === user.id);
-        if (userIndex >= 0) {
-          users[userIndex].coins = user.coins;
-          saveUsers(users);
-        }
-        const configs = loadBotConfigs();
-        const configIndex = configs.findIndex(c => c.id === config.id);
-        if (configIndex >= 0) {
-          configs[configIndex].paidUntil = paidUntil.toISOString();
-          configs[configIndex].startTime = new Date().toISOString();
-          saveBotConfigs(configs);
-          config = configs[configIndex];
-        }
-      }
-      
-      broadcast({ type: 'coins-updated', userId: user.id, coins: user.coins });
-      log(`${COIN_COST_START} coins deducted from "${user.username}" for bot start (running for ${BOT_DURATION_DAYS} days)`, 'warn');
-    }
-
+    // Plan check: bot start is free within the user's plan limit.
+    // (Bot count limit is enforced at creation time; starting is always allowed.)
     startPanelBotProcess(config);
     return res.json({ ok: true });
   } catch (err) {
@@ -1851,48 +1936,7 @@ app.post('/api/bot/start', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    // Coin check (skip for admin or VIP)
-    if (req.user.role !== 'admin' && !sess.serverTier !== 'vip') {
-      let user;
-      if (useMongoDB) {
-        user = await User.findById(req.user.id);
-      } else {
-        const users = loadUsers();
-        user = users.find(u => u.id === req.user.id);
-      }
-      
-      if (!user || user.coins < COIN_COST_START) {
-        return res.status(402).json({ error: `Not enough coins. Starting a bot costs ${COIN_COST_START} coins for ${BOT_DURATION_DAYS} days.` });
-      }
-      
-      // Deduct coins and set paid duration
-      user.coins -= COIN_COST_START;
-      const paidUntil = new Date(Date.now() + BOT_DURATION_DAYS * 24 * 60 * 60 * 1000);
-      
-      if (useMongoDB) {
-        await User.findByIdAndUpdate(user._id, { $set: { coins: user.coins } });
-        await Session.findByIdAndUpdate(sess._id, { $set: { paidUntil, startTime: new Date() } });
-      } else {
-        const users = loadUsers();
-        const userIndex = users.findIndex(u => u.id === user.id);
-        if (userIndex >= 0) {
-          users[userIndex].coins = user.coins;
-          saveUsers(users);
-        }
-        const sessions = loadSessions();
-        const sessIndex = sessions.findIndex(s => s.id === sess.id);
-        if (sessIndex >= 0) {
-          sessions[sessIndex].paidUntil = paidUntil.toISOString();
-          sessions[sessIndex].startTime = new Date().toISOString();
-          saveSessions(sessions);
-          sess = sessions[sessIndex];
-        }
-      }
-      
-      broadcast({ type: 'coins-updated', userId: user.id, coins: user.coins });
-      log(`${COIN_COST_START} coins deducted from "${user.username}" for bot start (running for ${BOT_DURATION_DAYS} days)`, 'warn');
-    }
-
+    // Plan check: bot start is allowed within plan limits.
     startBotProcess(sess);
     return res.json({ ok: true });
   } catch (err) {
