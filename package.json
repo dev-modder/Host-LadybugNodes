@@ -1,7 +1,7 @@
 {
   "name": "novaspark",
-  "version": "5.0.0",
-  "description": "NOVASPARK V5 \u2014 Multi-Host WhatsApp Bot Dashboard with Live Stats, Bot Features Display, Dark Mode, Toast Notifications, and more",
+  "version": "6.0.0",
+  "description": "NOVASPARK V6 \u2014 Multi-Host WhatsApp Bot Dashboard with Security Hardening, Notifications, Leaderboard, Profile, Activity Logs, Animations, and more",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -20,7 +20,10 @@
     "node-fetch": "^2.7.0",
     "systeminformation": "^5.21.24",
     "uuid": "^9.0.0",
-    "ws": "^8.16.0"
+    "ws": "^8.16.0",
+    "express-rate-limit": "^7.4.1",
+    "helmet": "^8.0.0",
+    "express-validator": "^7.2.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"

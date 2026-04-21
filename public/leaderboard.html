@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en" data-v6-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>NOVASPARK V6 · Leaderboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0a0d14;--panel:#111827;--panel2:#1a2235;--panel3:#1f2a3d;--border:#1f2d42;--border2:#172032;
+      --accent:#2563eb;--accent2:#3b82f6;--accent-glow:rgba(37,99,235,0.2);
+      --green:#22c55e;--green-dim:rgba(34,197,94,0.12);--green-b:rgba(34,197,94,0.3);
+      --red:#ef4444;--red-dim:rgba(239,68,68,0.12);--red-b:rgba(239,68,68,0.3);
+      --amber:#f59e0b;--amber-dim:rgba(245,158,11,0.12);--amber-b:rgba(245,158,11,0.3);
+      --gold:#f59e0b;--gold-dim:rgba(245,158,11,0.12);--gold-b:rgba(245,158,11,0.3);
+      --purple:#8b5cf6;--purple-dim:rgba(139,92,246,0.12);
+      --cyan:#06b6d4;
+      --text:#f1f5f9;--text-dim:#94a3b8;--text-muted:#475569;
+      --mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif;--radius:8px;
+      --sidebar-w:220px;
+    }
+    html{height:100%}
+    body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex}
+    /* SIDEBAR */
+    .sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:200}
+    .sidebar-logo{padding:18px 16px 16px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:10px}
+    .sidebar-logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 0 12px var(--accent-glow)}
+    .sidebar-logo-text{font-size:16px;font-weight:700;letter-spacing:-0.3px;line-height:1.1}
+    .sidebar-logo-text span{color:var(--accent2)}
+    .sidebar-logo-badge{display:block;font-family:var(--mono);font-size:9px;color:var(--text-muted);margin-top:2px}
+    .sidebar-section{padding:6px 8px}
+    .sidebar-section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);padding:8px 8px 4px;font-family:var(--mono)}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:6px;color:var(--text-dim);font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;transition:all 0.15s;margin-bottom:2px}
+    .nav-item:hover{background:var(--panel2);color:var(--text)}
+    .nav-item.active{background:rgba(37,99,235,0.15);color:var(--accent2);border:1px solid rgba(37,99,235,0.2)}
+    .nav-item-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+    .sidebar-footer{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border2)}
+    .user-pill{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--panel2);border:1px solid var(--border2);border-radius:8px}
+    .user-pill-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+    .user-pill-name{font-size:13px;font-weight:600}
+    .user-pill-role{font-size:10px;color:var(--text-dim);font-family:var(--mono)}
+    .main-content{margin-left:var(--sidebar-w);flex:1;min-height:100vh;display:flex;flex-direction:column}
+    .topbar{height:56px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:100;gap:12px}
+    .topbar-breadcrumb{font-size:13px;color:var(--text-dim);display:flex;align-items:center;gap:6px}
+    .topbar-breadcrumb span{color:var(--text);font-weight:600}
+    .topbar-actions{display:flex;align-items:center;gap:8px}
+    .coin-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:var(--gold-dim);border:1px solid var(--gold-b);border-radius:999px;font-family:var(--mono);font-size:12px;font-weight:600;color:var(--gold)}
+    .page{padding:24px;flex:1}
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);border:none;font-family:var(--sans);font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s}
+    .btn-secondary{background:var(--panel2);color:var(--text-dim);border:1px solid var(--border)}
+    .btn-secondary:hover{color:var(--text);border-color:var(--accent)}
+
+    /* PODIUM */
+    .podium-section{text-align:center;margin-bottom:40px}
+    .podium-title{font-size:24px;font-weight:700;margin-bottom:8px}
+    .podium-sub{font-size:13px;color:var(--text-dim);font-family:var(--mono);margin-bottom:32px}
+    .podium{display:flex;align-items:flex-end;justify-content:center;gap:12px;height:200px}
+    .podium-place{display:flex;flex-direction:column;align-items:center;animation:podiumRise 0.7s cubic-bezier(0.16,1,0.3,1) both}
+    .podium-place:nth-child(1){animation-delay:0.2s}
+    .podium-place:nth-child(2){animation-delay:0.0s}
+    .podium-place:nth-child(3){animation-delay:0.4s}
+    @keyframes podiumRise{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+    .podium-user{font-size:13px;font-weight:600;margin-bottom:6px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .podium-coins{font-size:11px;color:var(--gold);font-family:var(--mono);margin-bottom:8px}
+    .podium-avatar{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:8px;position:relative}
+    .podium-avatar .crown{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:20px;animation:crownBob 2s ease-in-out infinite}
+    @keyframes crownBob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-4px)}}
+    .podium-block{border-radius:10px 10px 0 0;width:90px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:rgba(255,255,255,0.6)}
+    .rank-1 .podium-block{height:120px;background:linear-gradient(180deg,rgba(245,158,11,0.4),rgba(245,158,11,0.1));border:1px solid rgba(245,158,11,0.3)}
+    .rank-1 .podium-avatar{background:linear-gradient(135deg,#f59e0b,#d97706);box-shadow:0 0 24px rgba(245,158,11,0.4)}
+    .rank-2 .podium-block{height:90px;background:linear-gradient(180deg,rgba(148,163,184,0.3),rgba(148,163,184,0.05));border:1px solid rgba(148,163,184,0.2)}
+    .rank-2 .podium-avatar{background:linear-gradient(135deg,#94a3b8,#64748b);box-shadow:0 0 20px rgba(148,163,184,0.3)}
+    .rank-3 .podium-block{height:70px;background:linear-gradient(180deg,rgba(180,120,60,0.3),rgba(180,120,60,0.05));border:1px solid rgba(180,120,60,0.2)}
+    .rank-3 .podium-avatar{background:linear-gradient(135deg,#cd7f32,#a0522d);box-shadow:0 0 16px rgba(180,120,60,0.3)}
+
+    /* MY RANK BANNER */
+    .my-rank-banner{background:linear-gradient(135deg,rgba(37,99,235,0.15),rgba(139,92,246,0.15));border:1px solid rgba(37,99,235,0.3);border-radius:12px;padding:14px 20px;margin-bottom:24px;display:flex;align-items:center;gap:14px;animation:slideIn 0.5s ease}
+    @keyframes slideIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+    .my-rank-num{font-size:28px;font-weight:800;font-family:var(--mono);color:var(--accent2)}
+    .my-rank-text{font-size:13px;color:var(--text-dim);font-family:var(--mono)}
+
+    /* TABLE */
+    .lb-table{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+    .lb-header{display:grid;grid-template-columns:60px 1fr 140px 120px 80px;padding:12px 20px;background:var(--panel2);border-bottom:1px solid var(--border);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);font-family:var(--mono)}
+    .lb-row{display:grid;grid-template-columns:60px 1fr 140px 120px 80px;padding:14px 20px;border-bottom:1px solid var(--border2);align-items:center;transition:background 0.15s;animation:fadeIn 0.4s ease both}
+    .lb-row:last-child{border-bottom:none}
+    .lb-row:hover{background:var(--panel2)}
+    .lb-row.is-me{background:rgba(37,99,235,0.1);border-color:rgba(37,99,235,0.2)}
+    @keyframes fadeIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+    .rank-badge{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:13px;font-weight:700}
+    .rank-badge.r1{background:rgba(245,158,11,0.2);color:#f59e0b;border:1px solid rgba(245,158,11,0.4)}
+    .rank-badge.r2{background:rgba(148,163,184,0.15);color:#94a3b8;border:1px solid rgba(148,163,184,0.3)}
+    .rank-badge.r3{background:rgba(180,120,60,0.15);color:#cd7f32;border:1px solid rgba(180,120,60,0.3)}
+    .rank-badge.rn{background:var(--panel2);color:var(--text-muted);border:1px solid var(--border)}
+    .lb-user-wrap{display:flex;align-items:center;gap:10px}
+    .lb-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+    .lb-username{font-size:13px;font-weight:600}
+    .lb-coins{font-family:var(--mono);font-size:13px;color:var(--gold);font-weight:600}
+    .lb-referrals{font-family:var(--mono);font-size:12px;color:var(--text-dim)}
+    .vip-badge{display:inline-flex;padding:2px 8px;background:var(--gold-dim);border:1px solid var(--gold-b);border-radius:4px;font-size:9px;font-family:var(--mono);color:var(--gold);font-weight:700}
+    .skeleton{background:linear-gradient(90deg,var(--panel2) 25%,var(--panel3) 50%,var(--panel2) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">⚡</div>
+      <div>
+        <div class="sidebar-logo-text">NOVA<span>SPARK</span></div>
+        <span class="sidebar-logo-badge">V6.0.0</span>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Navigation</div>
+      <a class="nav-item" href="/"><span class="nav-item-icon">📊</span>Dashboard</a>
+      <a class="nav-item" href="/panel-bots.html"><span class="nav-item-icon">🤖</span>Panel Bots</a>
+      <a class="nav-item" href="/bot-features.html"><span class="nav-item-icon">⚙️</span>Bot Features</a>
+      <a class="nav-item active" href="/leaderboard.html"><span class="nav-item-icon">🏆</span>Leaderboard</a>
+      <a class="nav-item" href="/notifications.html"><span class="nav-item-icon">🔔</span>Notifications</a>
+      <a class="nav-item" href="/profile.html"><span class="nav-item-icon">👤</span>Profile</a>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="user-pill-avatar" id="sb-avatar">👤</div>
+        <div>
+          <div class="user-pill-name" id="sb-name">—</div>
+          <div class="user-pill-role" id="sb-role">—</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-breadcrumb">Dashboard <span style="color:var(--text-muted);margin:0 4px">/</span> <span>🏆 Leaderboard</span></div>
+      <div class="topbar-actions">
+        <div class="coin-chip">🪙 <span id="top-coins">—</span></div>
+        <button class="btn btn-secondary" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="page">
+      <div class="podium-section">
+        <div class="podium-title">🏆 Top Players</div>
+        <div class="podium-sub">// Ranked by total coins earned on the platform</div>
+        <div class="podium" id="podium">
+          <div class="skeleton" style="width:90px;height:160px;border-radius:10px;"></div>
+          <div class="skeleton" style="width:90px;height:200px;border-radius:10px;opacity:0.8"></div>
+          <div class="skeleton" style="width:90px;height:130px;border-radius:10px;opacity:0.6"></div>
+        </div>
+      </div>
+
+      <div id="my-rank-banner" style="display:none" class="my-rank-banner">
+        <div class="my-rank-num" id="my-rank-num">#—</div>
+        <div>
+          <div style="font-size:14px;font-weight:600">Your ranking</div>
+          <div class="my-rank-text" id="my-rank-text">Loading your position...</div>
+        </div>
+      </div>
+
+      <div class="lb-table">
+        <div class="lb-header">
+          <div>Rank</div><div>User</div><div>🪙 Coins</div><div>👥 Referrals</div><div>Tier</div>
+        </div>
+        <div id="lb-body">
+          ${[1,2,3,4,5].map(()=>`<div class="lb-row"><div class="skeleton" style="height:20px;width:40px"></div><div class="skeleton" style="height:20px;width:60%"></div><div class="skeleton" style="height:20px;width:60px"></div><div class="skeleton" style="height:20px;width:40px"></div><div></div></div>`).join('')}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const token=localStorage.getItem('ns_token');
+    if(!token){window.location.href='/login.html';}
+    const hdr={'Authorization':'Bearer '+token};
+    let meUsername='';
+
+    async function init(){
+      try{
+        const r=await fetch('/api/auth/me',{headers:hdr});
+        if(!r.ok){window.location.href='/login.html';return;}
+        const u=await r.json();
+        meUsername=u.username;
+        document.getElementById('sb-avatar').textContent=(u.username||'?')[0].toUpperCase();
+        document.getElementById('sb-name').textContent=u.username;
+        document.getElementById('sb-role').textContent=u.role;
+        document.getElementById('top-coins').textContent=u.coins||0;
+      }catch{}
+
+      try{
+        const r=await fetch('/api/leaderboard',{headers:hdr});
+        const data=await r.json();
+        renderPodium(data.leaderboard);
+        renderTable(data.leaderboard);
+        if(data.myRank){
+          document.getElementById('my-rank-banner').style.display='flex';
+          document.getElementById('my-rank-num').textContent='#'+data.myRank;
+          const me=data.leaderboard.find(u=>u.username===meUsername);
+          document.getElementById('my-rank-text').textContent=me?`${me.coins} coins · ${me.referrals} referrals`:'';
+        }
+      }catch{document.getElementById('lb-body').innerHTML='<div style="padding:20px;color:var(--text-muted);font-family:var(--mono);font-size:13px">Failed to load leaderboard.</div>';}
+    }
+
+    function renderPodium(lb){
+      const top3=[lb[1],lb[0],lb[2]].map((u,i)=>({...u,displayRank:i===0?2:i===1?1:3}));
+      const icons=['🥈','🥇','🥉'];
+      const delays=[0.2,0,0.4];
+      document.getElementById('podium').innerHTML=top3.filter(Boolean).map((u,i)=>{
+        const rank=u.displayRank;
+        return `<div class="podium-place rank-${rank}" style="animation-delay:${delays[i]}s">
+          <div class="podium-user">${u.username}</div>
+          <div class="podium-coins">🪙 ${u.coins}</div>
+          <div class="podium-avatar">
+            ${rank===1?'<span class="crown">👑</span>':''}
+            ${u.username[0].toUpperCase()}
+          </div>
+          <div class="podium-block">${icons[i]||rank}</div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderTable(lb){
+      const rankClass=(r)=>r<=3?'r'+r:'rn';
+      const rankIcon=(r)=>r===1?'🥇':r===2?'🥈':r===3?'🥉':'';
+      document.getElementById('lb-body').innerHTML=lb.map((u,i)=>`
+        <div class="lb-row ${u.username===meUsername?'is-me':''}" style="animation-delay:${i*0.04}s">
+          <div><span class="rank-badge ${rankClass(u.rank)}">${rankIcon(u.rank)||u.rank}</span></div>
+          <div class="lb-user-wrap">
+            <div class="lb-avatar">${u.username[0].toUpperCase()}</div>
+            <div>
+              <div class="lb-username">${u.username}${u.username===meUsername?' <span style="color:var(--accent2);font-size:10px">(you)</span>':''}</div>
+            </div>
+          </div>
+          <div class="lb-coins">🪙 ${u.coins.toLocaleString()}</div>
+          <div class="lb-referrals">👥 ${u.referrals}</div>
+          <div>${u.vip?'<span class="vip-badge">👑 VIP</span>':''}</div>
+        </div>`).join('');
+    }
+
+    function logout(){localStorage.removeItem('ns_token');localStorage.removeItem('ns_user');window.location.href='/login.html';}
+    init();
+  </script>
+</body>
+</html>

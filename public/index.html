@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NOVASPARK V5 · Dashboard</title>
+  <title>NOVASPARK V6 · Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg:        #0d1117;
-      --panel:     #161b22;
-      --panel2:    #1c2333;
-      --panel3:    #21262d;
-      --border:    #30363d;
-      --border2:   #21262d;
-      --accent:    #1f6feb;
-      --accent2:   #388bfd;
+      --bg:        #0a0d14;
+      --panel:     #111827;
+      --panel2:    #1a2235;
+      --panel3:    #1f2a3d;
+      --border:    #1f2d42;
+      --border2:   #172032;
+      --accent:    #2563eb;
+      --accent2:   #3b82f6;
       --accent-glow: rgba(31,111,235,0.2);
       --green:     #3fb950;
       --green-dim: rgba(63,185,80,0.12);
@@ -46,6 +46,30 @@
     }
     html { height: 100%; scroll-behavior: smooth; }
     body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; display: flex; }
+
+    /* ── V6 Animations ─────────────────────────────────────────────────────── */
+    @keyframes fadeSlideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeIn      { from{opacity:0} to{opacity:1} }
+    @keyframes shimmer     { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    @keyframes coinRoll    { from{transform:scale(1)} 20%{transform:scale(1.3) rotate(-5deg)} 40%{transform:scale(1.1) rotate(3deg)} to{transform:scale(1)} }
+    @keyframes confettiFall{ 0%{transform:translateY(-100px) rotate(0deg);opacity:1} 100%{transform:translateY(100vh) rotate(720deg);opacity:0} }
+    .page-animate { animation: fadeSlideUp 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+    .card-animate { animation: fadeSlideUp 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+    .card-animate:nth-child(1){animation-delay:0.05s} .card-animate:nth-child(2){animation-delay:0.1s}
+    .card-animate:nth-child(3){animation-delay:0.15s} .card-animate:nth-child(4){animation-delay:0.2s}
+    .skeleton-pulse { background: linear-gradient(90deg,var(--panel2) 25%,var(--panel3) 50%,var(--panel2) 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; border-radius:6px; }
+    .coin-animate { animation: coinRoll 0.6s ease; }
+    /* Sidebar icon glow on hover */
+    .nav-item:hover .nav-item-icon { text-shadow: 0 0 10px var(--accent-glow); }
+    /* Logo gradient */
+    .sidebar-logo-icon { background: linear-gradient(135deg,var(--accent),#8b5cf6) !important; }
+    /* Button ripple */
+    .btn { position: relative; overflow: hidden; }
+    .btn-ripple { position:absolute;border-radius:50%;background:rgba(255,255,255,0.2);pointer-events:none;animation:rippleAnim 0.5s linear forwards; }
+    @keyframes rippleAnim{from{opacity:1;transform:scale(0)}to{opacity:0;transform:scale(4)}}
+    /* Animated status badges */
+    .badge.running { box-shadow: 0 0 10px rgba(34,197,94,0.3); }
+    .badge.crashed { box-shadow: 0 0 10px rgba(239,68,68,0.3); }
 
     /* ── SIDEBAR ─────────────────────────────────────── */
     .sidebar {
@@ -370,20 +394,30 @@
       <div class="sidebar-logo-icon">⚡</div>
       <div>
         <div class="sidebar-logo-text">NOVA<span>SPARK</span></div>
-        <span class="sidebar-logo-badge">V5 Control Panel</span>
+        <span class="sidebar-logo-badge">V6.0.0</span>
       </div>
     </div>
 
     <div class="sidebar-section">
       <div class="sidebar-section-label">Main</div>
       <a href="/" class="nav-item active">
-        <span class="nav-item-icon">▦</span> Dashboard
+        <span class="nav-item-icon">📊</span> Dashboard
       </a>
       <a href="/panel-bots.html" class="nav-item">
-        <span class="nav-item-icon">📦</span> Panel Bots
+        <span class="nav-item-icon">🤖</span> Panel Bots
       </a>
       <a href="/bot-features.html" class="nav-item">
-        <span class="nav-item-icon">🤖</span> Bot Features
+        <span class="nav-item-icon">⚙️</span> Bot Features
+      </a>
+      <a href="/leaderboard.html" class="nav-item">
+        <span class="nav-item-icon">🏆</span> Leaderboard
+      </a>
+      <a href="/notifications.html" class="nav-item" id="nav-notifications">
+        <span class="nav-item-icon">🔔</span> Notifications
+        <span id="notif-nav-dot" style="width:7px;height:7px;background:var(--red);border-radius:50%;margin-left:auto;display:none;animation:blink 2s infinite"></span>
+      </a>
+      <a href="/profile.html" class="nav-item">
+        <span class="nav-item-icon">👤</span> Profile
       </a>
     </div>
 
@@ -569,7 +603,7 @@
     <footer class="page-footer">
       <div id="v5-server-stats">⚡ Loading server stats...</div>
       <div>
-        NOVASPARK V5 &nbsp;•&nbsp;
+        NOVASPARK V6 &nbsp;•&nbsp;
         <a href="https://render.com" target="_blank">Render.com</a> &nbsp;•&nbsp;
         <a href="/terms.html">Terms</a> &nbsp;•&nbsp;
         <a href="/bot-features.html">Bot Features</a> &nbsp;•&nbsp;
@@ -679,19 +713,46 @@
   <div id="toast"></div>
 
 <script>
-const token = localStorage.getItem('lbn_token');
-if (!token) location.href = '/login';
+const token = localStorage.getItem('ns_token');
+if (!token) location.href = '/login.html';
 
-let currentUser = JSON.parse(localStorage.getItem('lbn_user') || '{}');
+// ── V6: Check notifications unread count ──────────────────────────────────
+async function checkNotifBadge() {
+  try {
+    const r = await fetch('/api/notifications', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (!r.ok) return;
+    const notes = await r.json();
+    const unread = notes.filter(n => !n.read).length;
+    const dot = document.getElementById('notif-nav-dot');
+    if (dot) dot.style.display = unread > 0 ? 'block' : 'none';
+  } catch {}
+}
+checkNotifBadge();
+setInterval(checkNotifBadge, 30000);
+
+// ── V6: Button ripple effect ───────────────────────────────────────────────
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.btn');
+  if (!btn) return;
+  const rect = btn.getBoundingClientRect();
+  const r = document.createElement('span');
+  const size = Math.max(rect.width, rect.height);
+  r.className = 'btn-ripple';
+  r.style.cssText = 'width:' + size + 'px;height:' + size + 'px;left:' + (e.clientX - rect.left - size/2) + 'px;top:' + (e.clientY - rect.top - size/2) + 'px';
+  btn.appendChild(r);
+  setTimeout(() => r.remove(), 600);
+});
+
+let currentUser = JSON.parse(localStorage.getItem('ns_user') || '{}');
 
 function authHeaders() {
   return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
 }
 
 function logout() {
-  localStorage.removeItem('lbn_token');
-  localStorage.removeItem('lbn_user');
-  location.href = '/login';
+  localStorage.removeItem('ns_token');
+  localStorage.removeItem('ns_user');
+  location.href = '/login.html';
 }
 
 // Init UI
@@ -719,7 +780,7 @@ async function refreshMe() {
     if (r.status === 401) { logout(); return; }
     const u = await r.json();
     currentUser = { ...currentUser, ...u };
-    localStorage.setItem('lbn_user', JSON.stringify(currentUser));
+    localStorage.setItem('ns_user', JSON.stringify(currentUser));
     document.getElementById('coin-count').textContent = u.coins;
     document.getElementById('stat-coins').textContent = u.coins;
     document.getElementById('stat-referrals').textContent = u.referralCount || 0;
@@ -772,7 +833,7 @@ function connect() {
       document.getElementById('coin-count').textContent = msg.coins;
       document.getElementById('stat-coins').textContent = msg.coins;
       currentUser.coins = msg.coins;
-      localStorage.setItem('lbn_user', JSON.stringify(currentUser));
+      localStorage.setItem('ns_user', JSON.stringify(currentUser));
     }
   };
 }
@@ -898,7 +959,13 @@ async function claimDailyReward() {
   try {
     const r = await fetch('/api/coins/daily', { method:'POST', headers: authHeaders() });
     const d = await r.json();
-    if (d.ok) { toast('Daily reward claimed! +' + d.rewarded + ' coins', 'ok'); refreshMe(); }
+    if (d.ok) {
+      toast('Daily reward claimed! +' + d.rewarded + ' coins 🎉', 'ok');
+      refreshMe();
+      launchConfetti();
+      const coinEl = document.getElementById('coin-count');
+      if (coinEl) { coinEl.classList.remove('coin-animate'); void coinEl.offsetWidth; coinEl.classList.add('coin-animate'); }
+    }
     else toast(d.error || 'Failed to claim', 'error');
   } catch (err) { toast('Error: ' + err.message, 'error'); }
 }
@@ -1410,6 +1477,31 @@ async function v5LoadFooterStats() {
 }
 v5LoadFooterStats();
 setInterval(v5LoadFooterStats, 30000);
+
+// ── V6: Confetti burst ────────────────────────────────────────────────────
+function launchConfetti() {
+  const colors = ['#2563eb','#8b5cf6','#f59e0b','#22c55e','#ef4444','#06b6d4'];
+  for (let i = 0; i < 60; i++) {
+    const el = document.createElement('div');
+    const size = Math.random() * 8 + 4;
+    el.style.cssText = [
+      'position:fixed', 'top:0', 'left:' + Math.random() * 100 + 'vw',
+      'width:' + size + 'px', 'height:' + size + 'px',
+      'background:' + colors[Math.floor(Math.random()*colors.length)],
+      'border-radius:' + (Math.random() > 0.5 ? '50%' : '2px'),
+      'z-index:9999', 'pointer-events:none',
+      'animation:confettiFall ' + (Math.random() * 1.5 + 1) + 's ease ' + (Math.random() * 0.5) + 's forwards'
+    ].join(';');
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+}
+
+// ── V6: page-load animation on main content ───────────────────────────────
+document.querySelectorAll('.section-card, .sc-wrap, .stat-card, .stats-bar').forEach((el, i) => {
+  el.style.animationDelay = (i * 0.05) + 's';
+  el.classList.add('card-animate');
+});
 </script>
 
 </body>

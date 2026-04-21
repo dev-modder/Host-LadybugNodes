@@ -16,6 +16,9 @@ const fetch      = require('node-fetch');
 const chalk      = require('chalk');
 const multer     = require('multer');
 const mongoose   = require('mongoose');
+const rateLimit  = require('express-rate-limit');
+const helmet     = require('helmet');
+const { body, validationResult } = require('express-validator');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIG
@@ -29,6 +32,12 @@ const PING_INTERVAL_MS = 14 * 60 * 1000;  // 14 minutes
 // Default admin credentials
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'devntando';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'ntando';
+
+
+// ── V6 Security: brute-force lockout map ─────────────────────────────────────
+const loginAttempts = new Map(); // key = username, val = { count, lockedUntil }
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
 
 // Coin costs and rewards
 const COIN_COST_START = 5;        // 5 coins to run bot for 2 days
@@ -52,6 +61,8 @@ const UPLOADED_BOTS_DIR = path.join(DATA_DIR, 'uploaded-bots');
 const BOT_CONFIGS_FILE = path.join(DATA_DIR, 'bot-configs.json');
 const DELETED_BOTS_FILE = path.join(DATA_DIR, 'deleted-bots.json');
 const REDEMPTION_CODES_FILE = path.join(DATA_DIR, 'redemption-codes.json');
+const NOTIFICATIONS_FILE    = path.join(DATA_DIR, 'notifications.json');
+const ACTIVITY_FILE         = path.join(DATA_DIR, 'activity.json');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(UPLOADED_BOTS_DIR)) fs.mkdirSync(UPLOADED_BOTS_DIR, { recursive: true });
@@ -177,6 +188,35 @@ function loadRedemptionCodes() {
 
 function saveRedemptionCodes(codes) {
   fs.writeFileSync(REDEMPTION_CODES_FILE, JSON.stringify(codes, null, 2));
+}
+
+// ── V6: Notifications helpers ─────────────────────────────────────────────────
+function loadNotifications() {
+  try { return JSON.parse(fs.readFileSync(NOTIFICATIONS_FILE, 'utf8')); } catch { return []; }
+}
+function saveNotifications(n) {
+  try { fs.writeFileSync(NOTIFICATIONS_FILE, JSON.stringify(n, null, 2)); } catch {}
+}
+function pushNotification(userId, title, body, icon = '🔔') {
+  const notes = loadNotifications();
+  notes.push({ id: uuidv4(), userId: String(userId), title, body, icon, read: false, createdAt: new Date().toISOString() });
+  const cleaned = notes.filter(n => n.userId === String(userId)).slice(-100);
+  const others  = notes.filter(n => n.userId !== String(userId));
+  saveNotifications([...others, ...cleaned]);
+  broadcast({ type: 'notification', userId: String(userId), title, body, icon });
+}
+
+// ── V6: Activity log helpers ──────────────────────────────────────────────────
+function loadActivity() {
+  try { return JSON.parse(fs.readFileSync(ACTIVITY_FILE, 'utf8')); } catch { return []; }
+}
+function saveActivity(a) {
+  try { fs.writeFileSync(ACTIVITY_FILE, JSON.stringify(a, null, 2)); } catch {}
+}
+function logActivity(userId, username, action, meta = {}) {
+  const acts = loadActivity();
+  acts.push({ id: uuidv4(), userId: String(userId), username, action, meta, ts: new Date().toISOString() });
+  saveActivity(acts.slice(-500));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -340,7 +380,30 @@ function log(msg, level = 'info', sessionId = null) {
 const app = express();
 const server = http.createServer(app);
 
-app.use(express.json());
+// ── V6 Security Middleware ────────────────────────────────────────────────────
+app.use(helmet({
+  contentSecurityPolicy: false, // Allow inline scripts in HTML pages
+  crossOriginEmbedderPolicy: false
+}));
+
+// Rate limiting
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Too many attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 120,
+  message: { error: 'Rate limit exceeded. Slow down.' }
+});
+
+app.use('/api/auth', authLimiter);
+app.use('/api', apiLimiter);
+
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -541,53 +604,60 @@ app.post('/api/auth/login', async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
 
-  try {
-    if (useMongoDB) {
-      const user = await User.findOne({ username });
-      if (!user || !(await bcrypt.compare(password, user.password))) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
+  // ── V6: Brute-force protection ─────────────────────────────────────────────
+  const key = username.toLowerCase();
+  const attempt = loginAttempts.get(key) || { count: 0, lockedUntil: 0 };
+  if (attempt.lockedUntil > Date.now()) {
+    const remaining = Math.ceil((attempt.lockedUntil - Date.now()) / 60000);
+    return res.status(429).json({ error: `Account locked. Try again in ${remaining} minute(s).` });
+  }
 
-      const token = jwt.sign({ id: user._id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-      log(`User "${username}" logged in`, 'ok');
-      
-      return res.json({ 
-        ok: true, 
-        token, 
-        user: { 
-          id: user._id, 
-          username: user.username, 
-          role: user.role, 
-          coins: user.coins,
-          referralCode: user.referralCode,
-          hasVIPAccess: user.hasVIPAccess
-        } 
-      });
+  try {
+    let user = null;
+    let passwordMatch = false;
+
+    if (useMongoDB) {
+      user = await User.findOne({ username });
+      if (user) passwordMatch = await bcrypt.compare(password, user.password);
     } else {
       const users = loadUsers();
-      const user = users.find(u => u.username === username);
-      if (!user || !bcrypt.compareSync(password, user.password)) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
-
-      const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-      log(`User "${username}" logged in`, 'ok');
-      
-      return res.json({ 
-        ok: true, 
-        token, 
-        user: { 
-          id: user.id, 
-          username: user.username, 
-          role: user.role, 
-          coins: user.coins,
-          referralCode: user.referralCode,
-          hasVIPAccess: user.hasVIPAccess
-        } 
-      });
+      user = users.find(u => u.username === username);
+      if (user) passwordMatch = bcrypt.compareSync(password, user.password);
     }
+
+    if (!user || !passwordMatch) {
+      attempt.count += 1;
+      if (attempt.count >= MAX_LOGIN_ATTEMPTS) {
+        attempt.lockedUntil = Date.now() + LOCKOUT_MS;
+        attempt.count = 0;
+        log(`Account "${username}" locked after ${MAX_LOGIN_ATTEMPTS} failed attempts`, 'warn');
+      }
+      loginAttempts.set(key, attempt);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Reset attempts on success
+    loginAttempts.delete(key);
+
+    const userId = user._id || user.id;
+    const token = jwt.sign({ id: userId, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    log(`User "${username}" logged in`, 'ok');
+    logActivity(userId, user.username, 'login', { ip: req.ip });
+
+    return res.json({ 
+      ok: true, 
+      token, 
+      user: { 
+        id: userId, 
+        username: user.username, 
+        role: user.role, 
+        coins: user.coins,
+        referralCode: user.referralCode,
+        hasVIPAccess: user.hasVIPAccess
+      } 
+    });
   } catch (err) {
-    log(`Login error: ${err.message}`, 'error');
+    log(`Login error: \${err.message}`, 'error');
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -617,6 +687,99 @@ app.get('/api/auth/me', requireAuth, async (req, res) => {
     }
   } catch (err) {
     return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// V6: CHANGE PASSWORD ROUTE
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/api/auth/change-password', requireAuth, async (req, res) => {
+  const { currentPassword, newPassword } = req.body || {};
+  if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Both passwords required' });
+  if (newPassword.length < 8) return res.status(400).json({ error: 'New password must be at least 8 characters' });
+  if (!/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+    return res.status(400).json({ error: 'Password must contain at least one uppercase letter and one number' });
+  }
+  try {
+    if (useMongoDB) {
+      const user = await User.findById(req.user.id);
+      if (!user) return res.status(404).json({ error: 'User not found' });
+      const ok = await bcrypt.compare(currentPassword, user.password);
+      if (!ok) return res.status(401).json({ error: 'Current password incorrect' });
+      user.password = await bcrypt.hash(newPassword, 12);
+      await user.save();
+    } else {
+      const users = loadUsers();
+      const user = users.find(u => u.id === req.user.id);
+      if (!user) return res.status(404).json({ error: 'User not found' });
+      const ok = bcrypt.compareSync(currentPassword, user.password);
+      if (!ok) return res.status(401).json({ error: 'Current password incorrect' });
+      user.password = bcrypt.hashSync(newPassword, 12);
+      saveUsers(users);
+    }
+    logActivity(req.user.id, req.user.username, 'change-password');
+    return res.json({ ok: true, message: 'Password changed successfully' });
+  } catch (err) {
+    log(`Change password error: ${err.message}`, 'error');
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// V6: NOTIFICATIONS ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/api/notifications', requireAuth, (req, res) => {
+  const notes = loadNotifications();
+  const mine = notes.filter(n => n.userId === String(req.user.id));
+  res.json(mine.slice(-50).reverse());
+});
+
+app.post('/api/notifications/read', requireAuth, (req, res) => {
+  const { id } = req.body || {};
+  const notes = loadNotifications();
+  const updated = notes.map(n => {
+    if (n.userId !== String(req.user.id)) return n;
+    if (!id || n.id === id) return { ...n, read: true };
+    return n;
+  });
+  saveNotifications(updated);
+  res.json({ ok: true });
+});
+
+app.delete('/api/notifications/:id', requireAuth, (req, res) => {
+  const notes = loadNotifications();
+  const filtered = notes.filter(n => !(n.id === req.params.id && n.userId === String(req.user.id)));
+  saveNotifications(filtered);
+  res.json({ ok: true });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// V6: ACTIVITY LOG ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/api/activity', requireAuth, (req, res) => {
+  const acts = loadActivity();
+  const mine = req.user.role === 'admin' ? acts : acts.filter(a => a.userId === String(req.user.id));
+  res.json(mine.slice(-100).reverse());
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// V6: LEADERBOARD ROUTE
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/api/leaderboard', requireAuth, async (req, res) => {
+  try {
+    let users = [];
+    if (useMongoDB) {
+      const all = await User.find({}, 'username coins referralCount hasVIPAccess createdAt').sort({ coins: -1 }).limit(50);
+      users = all.map((u, i) => ({ rank: i+1, username: u.username, coins: u.coins, referrals: u.referralCount||0, vip: u.hasVIPAccess, joined: u.createdAt }));
+    } else {
+      const all = loadUsers();
+      users = [...all].sort((a,b) => (b.coins||0)-(a.coins||0)).slice(0,50).map((u, i) => ({ rank: i+1, username: u.username, coins: u.coins||0, referrals: u.referralCount||0, vip: u.hasVIPAccess||false, joined: u.createdAt }));
+    }
+    // Mark current user rank
+    const meIdx = users.findIndex(u => u.username === req.user.username);
+    res.json({ leaderboard: users, myRank: meIdx === -1 ? null : meIdx+1 });
+  } catch(err) {
+    res.status(500).json({ error: 'Failed to load leaderboard' });
   }
 });
 
@@ -1820,7 +1983,7 @@ app.get('/api/status', (req, res) => {
     pingCount: state.pingCount,
     cleanCount: state.cleanCount,
     mem,
-    version: '5.0.0'
+    version: '6.0.0'
   });
 });
 
@@ -1850,7 +2013,7 @@ app.get('/api/stats', requireAuth, async (req, res) => {
     const uptimeSecs = Math.floor((Date.now() - state.startTime) / 1000);
 
     res.json({
-      version: '5.0.0',
+      version: '6.0.0',
       uptime: uptimeSecs,
       activeBots,
       totalUsers,
@@ -1871,7 +2034,7 @@ app.get('/api/stats', requireAuth, async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 app.get('/api/bot-features', (req, res) => {
   res.json({
-    version: '5.0.0',
+    version: '6.0.0',
     botName: 'NovaSpark Bot',
     categories: [
       {
@@ -2029,7 +2192,7 @@ app.get('/api/bot-features', (req, res) => {
   });
 });
 
-app.get('/health', (req, res) => res.json({ status: 'ok', ts: Date.now(), version: '5.0.0', botName: 'NovaSpark Bot' }));
+app.get('/health', (req, res) => res.json({ status: 'ok', ts: Date.now(), version: '6.0.0', botName: 'NovaSpark Bot' }));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SERVE HTML PAGES
@@ -2335,7 +2498,7 @@ wss.on('connection', async (ws) => {
       pingCount: state.pingCount,
       cleanCount: state.cleanCount,
       mem: process.memoryUsage(),
-      version: '5.0.0'
+      version: '6.0.0'
     }
   }));
 

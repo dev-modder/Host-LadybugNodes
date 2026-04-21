@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NOVASPARK V5 · Sign Up</title>
+  <title>NOVASPARK V6 · Sign Up</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg:#0d1117; --panel:#161b22; --panel2:#1c2333; --border:#30363d; --border2:#21262d;
-      --accent:#1f6feb; --accent2:#388bfd; --accent-glow:rgba(31,111,235,0.25);
+      --bg:#0a0d14; --panel:#111827; --panel2:#1a2235; --border:#1f2d42; --border2:#172032;
+      --accent:#2563eb; --accent2:#3b82f6; --accent-glow:rgba(31,111,235,0.25);
       --green:#3fb950; --green-dim:rgba(63,185,80,0.12); --green-border:rgba(63,185,80,0.3);
       --red:#f85149; --red-dim:rgba(248,81,73,0.12); --red-border:rgba(248,81,73,0.3);
       --amber:#d29922; --amber-dim:rgba(210,153,34,0.12);
@@ -19,6 +19,17 @@
       --mono:'JetBrains Mono',monospace; --sans:'Inter',sans-serif; --radius:8px;
     }
     body { background:var(--bg); color:var(--text); font-family:var(--sans); min-height:100vh; display:flex; align-items:center; justify-content:center; position:relative; overflow-x:hidden; }
+    .aurora{position:fixed;z-index:0;pointer-events:none;filter:blur(80px);border-radius:50%;opacity:0.12;animation:aFloat 8s ease-in-out infinite alternate}
+    .a1{width:500px;height:400px;top:-10%;left:5%;background:radial-gradient(ellipse,#2563eb,transparent 70%)}
+    .a2{width:400px;height:350px;bottom:-5%;right:-5%;background:radial-gradient(ellipse,#8b5cf6,transparent 70%);animation-delay:3s}
+    @keyframes aFloat{0%{transform:translate(0,0)}100%{transform:translate(20px,15px)}}
+    .grid-overlay{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(var(--border2) 1px,transparent 1px),linear-gradient(90deg,var(--border2) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 20%,transparent 100%);opacity:0.4}
+    .wrap { position:relative; z-index:1; }
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+    .wrap { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both; }
+    /* Password strength */
+    .pw-strength-bar{height:3px;border-radius:2px;margin-top:5px;transition:width 0.3s,background 0.3s;width:0}
+    .pw-hint{font-size:10px;color:var(--text-muted);font-family:var(--mono);margin-top:3px}
     body::before { content:''; position:fixed; inset:0; z-index:0; background-image:linear-gradient(var(--border2) 1px,transparent 1px),linear-gradient(90deg,var(--border2) 1px,transparent 1px); background-size:40px 40px; mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 40%,transparent 100%); opacity:0.35; }
     body::after { content:''; position:fixed; top:-10%; right:-10%; width:600px; height:600px; z-index:0; background:radial-gradient(ellipse,rgba(31,111,235,0.08) 0%,transparent 70%); pointer-events:none; }
     .wrap { position:relative; z-index:1; width:100%; max-width:460px; padding:20px; }
@@ -58,12 +69,15 @@
   </style>
 </head>
 <body>
+  <div class="aurora a1"></div>
+  <div class="aurora a2"></div>
+  <div class="grid-overlay"></div>
   <div class="wrap">
     <div class="site-logo">
       <div class="site-logo-icon">⚡</div>
       <div>
         <span class="site-logo-text">NOVA<span>SPARK</span></span>
-        <span class="site-logo-badge">V5</span>
+        <span class="site-logo-badge">V6</span>
       </div>
     </div>
     <div class="card">
@@ -86,7 +100,9 @@
           </div>
           <div class="form-group">
             <label class="form-label" for="password">Password</label>
-            <input class="form-input" type="password" id="password" placeholder="min 6 characters" required autocomplete="new-password" />
+            <input class="form-input" type="password" id="password" placeholder="min 8 chars, 1 uppercase, 1 number" required autocomplete="new-password" oninput="checkPwStrength(this.value)"/>
+            <div id="pw-strength-bar" class="pw-strength-bar"></div>
+            <div id="pw-hint" class="pw-hint"></div>
           </div>
           <div class="form-group">
             <label class="form-label" for="referralCode">Referral code <span style="color:var(--text-muted)">(optional)</span></label>
@@ -102,13 +118,27 @@
       </div>
     </div>
     <div class="footer-note">
-      NOVASPARK V5 &nbsp;•&nbsp; Powered by <a href="https://render.com" target="_blank" style="color:var(--accent2);text-decoration:none;">Render.com</a><br>
-      © 2025 NOVASPARK V5. All rights reserved. | <a href="/terms.html">Terms</a>
+      NOVASPARK V6 &nbsp;•&nbsp; Powered by <a href="https://render.com" target="_blank" style="color:var(--accent2);text-decoration:none;">Render.com</a><br>
+      © 2025 NOVASPARK V6. All rights reserved. | <a href="/terms.html">Terms</a>
     </div>
   </div>
   <script>
-    const token = localStorage.getItem('ns_token') || localStorage.getItem('lbn_token');
+    const token = localStorage.getItem('ns_token');
     if (token) location.href = '/';
+
+    function checkPwStrength(val) {
+      const bar = document.getElementById('pw-strength-bar');
+      const hint = document.getElementById('pw-hint');
+      if (!bar) return;
+      let score = 0;
+      if (val.length >= 8) score++; if (val.length >= 12) score++;
+      if (/[A-Z]/.test(val)) score++; if (/[0-9]/.test(val)) score++; if (/[^A-Za-z0-9]/.test(val)) score++;
+      const levels = [{w:'20%',c:'#ef4444',l:'Very weak'},{w:'40%',c:'#f59e0b',l:'Weak'},{w:'60%',c:'#f59e0b',l:'Fair'},{w:'80%',c:'#22c55e',l:'Strong'},{w:'100%',c:'#06b6d4',l:'Very strong'}];
+      const lv = levels[Math.min(score, 4)];
+      bar.style.width = val ? lv.w : '0'; bar.style.background = lv.c;
+      hint.textContent = val ? lv.l : '';
+    }
+
     async function doSignup(e) {
       e.preventDefault();
       const btn=document.getElementById('signup-btn'), err=document.getElementById('error-msg'), success=document.getElementById('success-msg');

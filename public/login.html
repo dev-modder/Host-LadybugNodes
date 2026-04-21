@@ -3,64 +3,87 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NOVASPARK V5 · Login</title>
+  <title>NOVASPARK V6 · Login</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg:#0d1117; --panel:#161b22; --panel2:#1c2333; --border:#30363d; --border2:#21262d;
-      --accent:#1f6feb; --accent2:#388bfd; --accent-glow:rgba(31,111,235,0.25);
-      --green:#3fb950; --green-dim:rgba(63,185,80,0.12);
-      --red:#f85149; --red-dim:rgba(248,81,73,0.12);
-      --amber:#d29922; --cyan:#39c5cf; --cyan-dim:rgba(57,197,207,0.12);
-      --text:#e6edf3; --text-dim:#8b949e; --text-muted:#484f58;
-      --mono:'JetBrains Mono',monospace; --sans:'Inter',sans-serif; --radius:8px;
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0a0d14;--panel:#111827;--panel2:#1a2235;--border:#1f2d42;--border2:#172032;
+      --accent:#2563eb;--accent2:#3b82f6;--accent-glow:rgba(37,99,235,0.3);
+      --green:#22c55e;--green-dim:rgba(34,197,94,0.12);
+      --red:#ef4444;--red-dim:rgba(239,68,68,0.12);
+      --purple:#8b5cf6;--cyan:#06b6d4;
+      --text:#f1f5f9;--text-dim:#94a3b8;--text-muted:#475569;
+      --mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif;--radius:10px;
     }
-    html { height:100%; }
-    body { background:var(--bg); color:var(--text); font-family:var(--sans); min-height:100vh; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
-    body::before { content:''; position:fixed; inset:0; z-index:0; background-image:linear-gradient(var(--border2) 1px,transparent 1px),linear-gradient(90deg,var(--border2) 1px,transparent 1px); background-size:40px 40px; mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 40%,transparent 100%); opacity:0.4; }
-    body::after { content:''; position:fixed; top:-20%; left:50%; transform:translateX(-50%); width:700px; height:500px; z-index:0; background:radial-gradient(ellipse,rgba(31,111,235,0.12) 0%,transparent 70%); pointer-events:none; }
-    .login-wrap { position:relative; z-index:1; width:100%; max-width:420px; padding:20px; }
-    .site-logo { display:flex; align-items:center; gap:12px; justify-content:center; margin-bottom:28px; }
-    .site-logo-icon { width:42px; height:42px; background:var(--accent); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:22px; box-shadow:0 0 20px var(--accent-glow); }
-    .site-logo-text { font-size:20px; font-weight:700; letter-spacing:-0.3px; }
-    .site-logo-text span { color:var(--accent2); }
-    .site-logo-badge { font-family:var(--mono); font-size:9px; font-weight:600; background:var(--panel2); border:1px solid var(--border); padding:2px 7px; border-radius:4px; color:var(--text-dim); margin-left:6px; vertical-align:middle; }
-    .status-bar { display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:18px; font-family:var(--mono); font-size:11px; color:var(--text-dim); }
-    .status-dot { width:7px; height:7px; border-radius:50%; background:var(--green); animation:blink 2s ease-in-out infinite; }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-    .login-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.03); }
-    .login-card-header { padding:20px 24px 16px; border-bottom:1px solid var(--border2); background:var(--panel2); }
-    .login-card-header h2 { font-size:16px; font-weight:600; margin-bottom:4px; }
-    .login-card-header p { font-size:12px; color:var(--text-dim); font-family:var(--mono); }
-    .login-card-body { padding:24px; }
-    .form-group { margin-bottom:16px; }
-    .form-label { display:block; font-size:12px; font-weight:500; color:var(--text-dim); margin-bottom:6px; font-family:var(--mono); }
-    .form-input { width:100%; padding:10px 14px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); font-family:var(--mono); font-size:14px; transition:border-color 0.15s,box-shadow 0.15s; outline:none; }
-    .form-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow); }
-    .form-input::placeholder { color:var(--text-muted); }
-    .btn-login { width:100%; padding:11px; margin-top:8px; background:var(--accent); border:none; border-radius:var(--radius); color:#fff; font-family:var(--sans); font-size:14px; font-weight:600; cursor:pointer; transition:background 0.15s,box-shadow 0.15s; }
-    .btn-login:hover { background:var(--accent2); box-shadow:0 0 16px var(--accent-glow); }
-    .btn-login:active { transform:scale(0.99); }
-    .btn-login:disabled { opacity:0.5; cursor:not-allowed; }
-    .error-msg { background:var(--red-dim); border:1px solid rgba(248,81,73,0.3); border-radius:var(--radius); color:var(--red); font-family:var(--mono); font-size:12px; padding:10px 14px; margin-top:14px; display:none; }
-    .error-msg.show { display:block; }
-    .login-card-footer { padding:14px 24px; border-top:1px solid var(--border2); background:var(--panel2); text-align:center; }
-    .signup-link { font-size:12px; color:var(--text-dim); font-family:var(--mono); }
-    .signup-link a { color:var(--accent2); text-decoration:none; font-weight:600; }
-    .signup-link a:hover { text-decoration:underline; }
-    .footer-note { text-align:center; margin-top:20px; font-size:11px; color:var(--text-muted); font-family:var(--mono); line-height:1.8; }
-    .footer-note a { color:var(--text-dim); text-decoration:none; }
-    .footer-note a:hover { color:var(--text); }
+    html{height:100%}
+    body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+    #canvas-bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+    .aurora{position:fixed;z-index:0;pointer-events:none;filter:blur(80px);border-radius:50%;opacity:0.15;animation:aFloat 8s ease-in-out infinite alternate}
+    .a1{width:600px;height:400px;top:-10%;left:10%;background:radial-gradient(ellipse,#2563eb,transparent 70%);animation-delay:0s}
+    .a2{width:500px;height:400px;top:30%;right:-5%;background:radial-gradient(ellipse,#8b5cf6,transparent 70%);animation-delay:3s}
+    .a3{width:400px;height:300px;bottom:-5%;left:20%;background:radial-gradient(ellipse,#06b6d4,transparent 70%);animation-delay:1.5s}
+    @keyframes aFloat{0%{transform:translate(0,0) scale(1)}100%{transform:translate(30px,20px) scale(1.1)}}
+    .grid-overlay{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(var(--border2) 1px,transparent 1px),linear-gradient(90deg,var(--border2) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 20%,transparent 100%);opacity:0.5}
+    .login-wrap{position:relative;z-index:10;width:100%;max-width:440px;padding:20px;animation:fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(24px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+    .site-logo{display:flex;align-items:center;gap:14px;justify-content:center;margin-bottom:32px}
+    .site-logo-icon{width:48px;height:48px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 0 32px var(--accent-glow);animation:iconPulse 3s ease-in-out infinite}
+    @keyframes iconPulse{0%,100%{box-shadow:0 0 20px var(--accent-glow)}50%{box-shadow:0 0 40px rgba(37,99,235,0.5)}}
+    .site-logo-text{font-size:22px;font-weight:700;letter-spacing:-0.5px}
+    .site-logo-text span{background:linear-gradient(135deg,var(--accent2),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .site-logo-badge{font-family:var(--mono);font-size:9px;font-weight:600;background:linear-gradient(135deg,rgba(37,99,235,0.2),rgba(139,92,246,0.2));border:1px solid rgba(37,99,235,0.3);padding:2px 8px;border-radius:4px;color:var(--accent2);margin-left:8px;vertical-align:middle}
+    .status-bar{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px;font-family:var(--mono);font-size:11px;color:var(--text-dim)}
+    .status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:sBlink 2s ease-in-out infinite}
+    @keyframes sBlink{0%,100%{opacity:1;box-shadow:0 0 8px var(--green)}50%{opacity:0.4;box-shadow:none}}
+    .login-card{background:rgba(17,24,39,0.85);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.04),inset 0 1px 0 rgba(255,255,255,0.06);position:relative}
+    .login-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),var(--purple),transparent);opacity:0.8}
+    .login-card-header{padding:22px 26px 18px;border-bottom:1px solid var(--border2);background:rgba(26,34,53,0.6)}
+    .login-card-header h2{font-size:17px;font-weight:600;margin-bottom:5px}
+    .login-card-header p{font-size:12px;color:var(--text-dim);font-family:var(--mono)}
+    .login-card-body{padding:26px}
+    .form-group{margin-bottom:18px;position:relative}
+    .form-label{display:block;font-size:12px;font-weight:500;color:var(--text-dim);margin-bottom:7px;font-family:var(--mono)}
+    .input-wrap{position:relative}
+    .form-input{width:100%;padding:11px 14px 11px 42px;background:rgba(10,13,20,0.8);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:14px;transition:border-color 0.2s,box-shadow 0.2s;outline:none}
+    .form-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,0.2),0 0 16px rgba(37,99,235,0.1)}
+    .form-input::placeholder{color:var(--text-muted)}
+    .input-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;opacity:0.5;transition:opacity 0.2s}
+    .form-group:focus-within .input-icon{opacity:0.9}
+    .toggle-pass{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:16px;transition:color 0.2s}
+    .toggle-pass:hover{color:var(--text)}
+    .btn-login{width:100%;padding:12px;margin-top:8px;background:linear-gradient(135deg,var(--accent),var(--purple));border:none;border-radius:var(--radius);color:#fff;font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.2s,transform 0.15s,box-shadow 0.2s;box-shadow:0 4px 20px rgba(37,99,235,0.3);position:relative;overflow:hidden}
+    .btn-login:hover{box-shadow:0 6px 28px rgba(37,99,235,0.5);transform:translateY(-1px)}
+    .btn-login:active{transform:scale(0.98)}
+    .btn-login:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+    .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,0.2);pointer-events:none;animation:rippleAnim 0.6s linear forwards}
+    @keyframes rippleAnim{from{opacity:1;transform:scale(0)}to{opacity:0;transform:scale(3)}}
+    .error-msg{background:var(--red-dim);border:1px solid rgba(239,68,68,0.3);border-radius:var(--radius);color:var(--red);font-family:var(--mono);font-size:12px;padding:10px 14px;margin-top:14px;display:none;gap:8px;animation:fadeUp 0.3s ease}
+    .error-msg.show{display:flex;align-items:center}
+    .login-card-footer{padding:16px 26px;border-top:1px solid var(--border2);background:rgba(26,34,53,0.4);text-align:center}
+    .signup-link{font-size:12px;color:var(--text-dim);font-family:var(--mono)}
+    .signup-link a{color:var(--accent2);text-decoration:none;font-weight:600}
+    .signup-link a:hover{text-decoration:underline}
+    .footer-note{text-align:center;margin-top:22px;font-size:11px;color:var(--text-muted);font-family:var(--mono);line-height:2}
+    .footer-note a{color:var(--text-dim);text-decoration:none}
+    .footer-note a:hover{color:var(--text)}
+    .spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;margin-right:8px;vertical-align:middle}
+    @keyframes spin{to{transform:rotate(360deg)}}
   </style>
 </head>
 <body>
+  <canvas id="canvas-bg"></canvas>
+  <div class="aurora a1"></div>
+  <div class="aurora a2"></div>
+  <div class="aurora a3"></div>
+  <div class="grid-overlay"></div>
+
   <div class="login-wrap">
     <div class="site-logo">
       <div class="site-logo-icon">⚡</div>
       <div>
         <span class="site-logo-text">NOVA<span>SPARK</span></span>
-        <span class="site-logo-badge">V5</span>
+        <span class="site-logo-badge">V6</span>
       </div>
     </div>
     <div class="status-bar"><span class="status-dot"></span><span>All systems operational</span></div>
@@ -72,44 +95,83 @@
       <div class="login-card-body">
         <div class="form-group">
           <label class="form-label" for="username">Username</label>
-          <input class="form-input" type="text" id="username" placeholder="your_username" autocomplete="username" />
+          <div class="input-wrap">
+            <span class="input-icon">👤</span>
+            <input class="form-input" type="text" id="username" placeholder="your_username" autocomplete="username" />
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label" for="password">Password</label>
-          <input class="form-input" type="password" id="password" placeholder="••••••••••••" autocomplete="current-password" />
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input class="form-input" type="password" id="password" placeholder="••••••••••••" autocomplete="current-password" />
+            <button class="toggle-pass" type="button" id="toggle-pass">👁</button>
+          </div>
         </div>
-        <button class="btn-login" id="login-btn" onclick="doLogin()">Authenticate →</button>
-        <div class="error-msg" id="error-msg"></div>
+        <button class="btn-login" id="login-btn" onclick="doLogin(event)">Authenticate →</button>
+        <div class="error-msg" id="error-msg"><span>⚠</span><span id="error-text"></span></div>
       </div>
       <div class="login-card-footer">
         <div class="signup-link">No account? <a href="/signup.html">Create one →</a></div>
       </div>
     </div>
-    <div class="footer-note">
-      NOVASPARK V5 &nbsp;•&nbsp; Powered by <a href="https://render.com" target="_blank">Render.com</a><br>
-      © 2025 NOVASPARK V5. All rights reserved. | <a href="/terms.html">Terms</a>
-    </div>
+    <div class="footer-note">NOVASPARK V6 &nbsp;•&nbsp; Powered by <a href="https://render.com" target="_blank">Render.com</a><br>© 2025 NOVASPARK V6 | <a href="/terms.html">Terms</a></div>
   </div>
+
   <script>
-    const $ = id => document.getElementById(id);
-    document.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
-    async function doLogin() {
-      const btn=$('login-btn'), err=$('error-msg');
-      const username=$('username').value.trim(), password=$('password').value.trim();
-      if(!username||!password){showErr('Username and password required.');return;}
-      btn.disabled=true; btn.textContent='Authenticating...'; err.classList.remove('show');
-      try {
-        const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
-        const d=await r.json();
-        if(!r.ok){showErr(d.error||'Invalid credentials.');return;}
-        localStorage.setItem('ns_token',d.token);
-        localStorage.setItem('lbn_token',d.token);
-        if(d.user) localStorage.setItem('lbn_user',JSON.stringify(d.user));
-        window.location.href='/';
-      } catch(e){showErr('Connection error. Try again.');}
-      finally{btn.disabled=false;btn.textContent='Authenticate →';}
+    // Particle canvas
+    const canvas=document.getElementById('canvas-bg'),ctx=canvas.getContext('2d');
+    let W,H,particles=[];
+    function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight}
+    resize();window.addEventListener('resize',resize);
+    const COLORS=['#2563eb','#8b5cf6','#06b6d4','#3b82f6'];
+    function mkP(){return{x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.5+0.3,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,a:Math.random()*.5+0.1,c:COLORS[Math.floor(Math.random()*4)]}}
+    for(let i=0;i<80;i++)particles.push(mkP());
+    function draw(){
+      ctx.clearRect(0,0,W,H);
+      particles.forEach(p=>{
+        p.x+=p.vx;p.y+=p.vy;
+        if(p.x<0||p.x>W||p.y<0||p.y>H)Object.assign(p,mkP(),{x:Math.random()*W,y:Math.random()*H});
+        ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=p.c;ctx.globalAlpha=p.a;ctx.fill();ctx.globalAlpha=1;
+      });
+      for(let i=0;i<particles.length;i++)for(let j=i+1;j<particles.length;j++){
+        const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y,d=Math.sqrt(dx*dx+dy*dy);
+        if(d<100){ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);ctx.strokeStyle='#2563eb';ctx.globalAlpha=(1-d/100)*.12;ctx.lineWidth=0.5;ctx.stroke();ctx.globalAlpha=1;}
+      }
+      requestAnimationFrame(draw);
     }
-    function showErr(msg){const e=$('error-msg');e.textContent='⚠ '+msg;e.classList.add('show');}
+    draw();
+
+    // Toggle password
+    const tp=document.getElementById('toggle-pass'),pw=document.getElementById('password');
+    tp.addEventListener('click',()=>{const s=pw.type==='password';pw.type=s?'text':'password';tp.textContent=s?'🙈':'👁';});
+
+    // Ripple
+    document.getElementById('login-btn').addEventListener('click',function(e){
+      const rect=this.getBoundingClientRect(),r=document.createElement('span'),size=Math.max(rect.width,rect.height);
+      r.className='ripple';r.style.cssText=`width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+      this.appendChild(r);setTimeout(()=>r.remove(),700);
+    });
+
+    document.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin(e);});
+
+    const $=id=>document.getElementById(id);
+    function showErr(msg){const el=$('error-msg');$('error-text').textContent=msg;el.classList.add('show');}
+
+    async function doLogin(e){
+      const btn=$('login-btn'),errEl=$('error-msg');
+      const username=$('username').value.trim(),password=$('password').value;
+      if(!username||!password){showErr('Username and password required.');return;}
+      btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Authenticating...';errEl.classList.remove('show');
+      try{
+        const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+        const data=await r.json();
+        if(!r.ok){showErr(data.error||'Authentication failed');btn.disabled=false;btn.innerHTML='Authenticate →';return;}
+        localStorage.setItem('ns_token',data.token);localStorage.setItem('ns_user',JSON.stringify(data.user));
+        btn.innerHTML='✓ Authenticated — redirecting...';
+        setTimeout(()=>{window.location.href='/';},600);
+      }catch{showErr('Network error. Check your connection.');btn.disabled=false;btn.innerHTML='Authenticate →';}
+    }
   </script>
 </body>
 </html>

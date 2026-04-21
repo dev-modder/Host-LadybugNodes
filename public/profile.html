@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en" data-v6-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>NOVASPARK V6 · Profile</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0a0d14;--panel:#111827;--panel2:#1a2235;--panel3:#1f2a3d;--border:#1f2d42;--border2:#172032;
+      --accent:#2563eb;--accent2:#3b82f6;--accent-glow:rgba(37,99,235,0.2);
+      --green:#22c55e;--green-dim:rgba(34,197,94,0.12);--green-b:rgba(34,197,94,0.3);
+      --red:#ef4444;--red-dim:rgba(239,68,68,0.12);--red-b:rgba(239,68,68,0.3);
+      --amber:#f59e0b;--amber-dim:rgba(245,158,11,0.12);--amber-b:rgba(245,158,11,0.3);
+      --blue:#60a5fa;--blue-dim:rgba(96,165,250,0.12);--blue-b:rgba(96,165,250,0.3);
+      --cyan:#06b6d4;--cyan-dim:rgba(6,182,212,0.12);
+      --purple:#8b5cf6;--purple-dim:rgba(139,92,246,0.12);
+      --gold:#f59e0b;--gold-dim:rgba(245,158,11,0.12);--gold-b:rgba(245,158,11,0.3);
+      --text:#f1f5f9;--text-dim:#94a3b8;--text-muted:#475569;
+      --mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif;--radius:8px;
+      --sidebar-w:220px;
+    }
+    html{height:100%}
+    body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex}
+    /* SIDEBAR — shared */
+    .sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:200}
+    .sidebar-logo{padding:18px 16px 16px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:10px}
+    .sidebar-logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 0 12px var(--accent-glow)}
+    .sidebar-logo-text{font-size:16px;font-weight:700;letter-spacing:-0.3px;line-height:1.1}
+    .sidebar-logo-text span{color:var(--accent2)}
+    .sidebar-logo-badge{display:block;font-family:var(--mono);font-size:9px;color:var(--text-muted);margin-top:2px}
+    .sidebar-section{padding:6px 8px}
+    .sidebar-section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);padding:8px 8px 4px;font-family:var(--mono)}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:6px;color:var(--text-dim);font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;transition:all 0.15s;margin-bottom:2px}
+    .nav-item:hover{background:var(--panel2);color:var(--text)}
+    .nav-item.active{background:rgba(37,99,235,0.15);color:var(--accent2);border:1px solid rgba(37,99,235,0.2)}
+    .nav-item-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+    .sidebar-footer{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border2)}
+    .user-pill{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--panel2);border:1px solid var(--border2);border-radius:8px}
+    .user-pill-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+    .user-pill-name{font-size:13px;font-weight:600}
+    .user-pill-role{font-size:10px;color:var(--text-dim);font-family:var(--mono)}
+    /* MAIN */
+    .main-content{margin-left:var(--sidebar-w);flex:1;min-height:100vh;display:flex;flex-direction:column}
+    .topbar{height:56px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:100;gap:12px}
+    .topbar-breadcrumb{font-size:13px;color:var(--text-dim);display:flex;align-items:center;gap:6px}
+    .topbar-breadcrumb span{color:var(--text);font-weight:600}
+    .topbar-actions{display:flex;align-items:center;gap:8px}
+    .coin-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:var(--gold-dim);border:1px solid var(--gold-b);border-radius:999px;font-family:var(--mono);font-size:12px;font-weight:600;color:var(--gold)}
+    .page{padding:24px;flex:1;max-width:800px}
+    /* PROFILE HERO */
+    .profile-hero{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:24px;position:relative}
+    .profile-hero-banner{height:80px;background:linear-gradient(135deg,rgba(37,99,235,0.3),rgba(139,92,246,0.3),rgba(6,182,212,0.2));position:relative}
+    .profile-hero-banner::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,0.02) 0,rgba(255,255,255,0.02) 1px,transparent 1px,transparent 10px)}
+    .profile-hero-body{padding:0 24px 24px;display:flex;align-items:flex-end;gap:16px;margin-top:-32px;flex-wrap:wrap}
+    .profile-avatar-ring{width:72px;height:72px;border-radius:50%;padding:3px;background:linear-gradient(135deg,var(--accent),var(--purple));flex-shrink:0}
+    .profile-avatar{width:100%;height:100%;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:28px;border:3px solid var(--panel)}
+    .profile-info{flex:1;padding-top:36px}
+    .profile-name{font-size:20px;font-weight:700;margin-bottom:4px}
+    .profile-meta{font-size:12px;color:var(--text-dim);font-family:var(--mono)}
+    .profile-badges{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+    .pbadge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-family:var(--mono);font-size:10px;font-weight:600}
+    .pbadge.admin{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:var(--red)}
+    .pbadge.user{background:rgba(37,99,235,0.15);border:1px solid rgba(37,99,235,0.3);color:var(--accent2)}
+    .pbadge.vip{background:var(--gold-dim);border:1px solid var(--gold-b);color:var(--gold)}
+    /* STATS ROW */
+    .stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:24px}
+    .stat-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;transition:transform 0.15s,border-color 0.15s}
+    .stat-card:hover{transform:translateY(-2px);border-color:var(--accent)}
+    .stat-icon{font-size:20px;margin-bottom:8px}
+    .stat-val{font-size:22px;font-weight:700;font-family:var(--mono);color:var(--text)}
+    .stat-label{font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-top:2px}
+    /* SECTIONS */
+    .section-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px}
+    .section-hdr{padding:16px 20px;border-bottom:1px solid var(--border2);background:var(--panel2);display:flex;align-items:center;gap:10px}
+    .section-hdr-icon{font-size:16px}
+    .section-hdr-title{font-size:14px;font-weight:600}
+    .section-body{padding:20px}
+    .form-group{margin-bottom:16px}
+    .form-label{display:block;font-size:12px;font-weight:500;color:var(--text-dim);margin-bottom:6px;font-family:var(--mono)}
+    .form-input{width:100%;padding:10px 14px;background:rgba(10,13,20,0.8);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:13px;outline:none;transition:border-color 0.2s,box-shadow 0.2s}
+    .form-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,0.15)}
+    .form-input::placeholder{color:var(--text-muted)}
+    .form-input:read-only{opacity:0.6;cursor:default}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius);border:none;font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s}
+    .btn:disabled{opacity:0.45;cursor:not-allowed}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),var(--purple));color:#fff;box-shadow:0 2px 12px rgba(37,99,235,0.3)}
+    .btn-primary:hover{box-shadow:0 4px 20px rgba(37,99,235,0.4);transform:translateY(-1px)}
+    .btn-danger{background:var(--red-dim);color:var(--red);border:1px solid var(--red-b)}
+    .btn-secondary{background:var(--panel2);color:var(--text-dim);border:1px solid var(--border)}
+    .btn-secondary:hover{color:var(--text);border-color:var(--accent)}
+    .toast-wrap{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+    .toast{padding:12px 18px;border-radius:10px;font-size:13px;font-family:var(--mono);max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;align-items:center;gap:10px;animation:toastIn 0.35s cubic-bezier(0.16,1,0.3,1) both}
+    @keyframes toastIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+    .toast.out{animation:toastOut 0.3s ease forwards}
+    @keyframes toastOut{to{opacity:0;transform:translateX(40px)}}
+    .toast.success{background:var(--green-dim);border:1px solid var(--green-b);color:var(--green)}
+    .toast.error{background:var(--red-dim);border:1px solid var(--red-b);color:var(--red)}
+    .toast.info{background:var(--blue-dim);border:1px solid var(--blue-b);color:var(--blue)}
+    /* REFERRAL COPY */
+    .copy-row{display:flex;gap:8px;align-items:center}
+    .copy-input{flex:1}
+    /* ACTIVITY */
+    .activity-list{display:flex;flex-direction:column;gap:8px}
+    .activity-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--panel2);border:1px solid var(--border2);border-radius:8px;font-size:12px;font-family:var(--mono)}
+    .activity-icon{font-size:16px;flex-shrink:0}
+    .activity-action{color:var(--text);font-weight:500}
+    .activity-ts{color:var(--text-muted);margin-left:auto;white-space:nowrap}
+    .skeleton{background:linear-gradient(90deg,var(--panel2) 25%,var(--panel3) 50%,var(--panel2) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    /* Password strength */
+    .pw-strength{height:4px;border-radius:2px;margin-top:6px;transition:width 0.3s,background 0.3s;width:0%}
+    .pw-hint{font-size:10px;color:var(--text-muted);font-family:var(--mono);margin-top:4px}
+    /* Spinner */
+    .spinner{width:13px;height:13px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">⚡</div>
+      <div>
+        <div class="sidebar-logo-text">NOVA<span>SPARK</span></div>
+        <span class="sidebar-logo-badge">V6.0.0</span>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Navigation</div>
+      <a class="nav-item" href="/"><span class="nav-item-icon">📊</span>Dashboard</a>
+      <a class="nav-item" href="/panel-bots.html"><span class="nav-item-icon">🤖</span>Panel Bots</a>
+      <a class="nav-item" href="/bot-features.html"><span class="nav-item-icon">⚙️</span>Bot Features</a>
+      <a class="nav-item" href="/leaderboard.html"><span class="nav-item-icon">🏆</span>Leaderboard</a>
+      <a class="nav-item" href="/notifications.html"><span class="nav-item-icon">🔔</span>Notifications</a>
+      <a class="nav-item active" href="/profile.html"><span class="nav-item-icon">👤</span>Profile</a>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="user-pill-avatar" id="sb-avatar">👤</div>
+        <div>
+          <div class="user-pill-name" id="sb-name">—</div>
+          <div class="user-pill-role" id="sb-role">—</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-breadcrumb">Dashboard <span style="color:var(--text-muted);margin:0 4px">/</span> <span>Profile</span></div>
+      <div class="topbar-actions">
+        <div class="coin-chip">🪙 <span id="top-coins">—</span></div>
+        <button class="btn btn-secondary" onclick="logout()" style="padding:6px 12px;font-size:12px">Logout</button>
+      </div>
+    </div>
+
+    <div class="page">
+      <!-- Hero -->
+      <div class="profile-hero">
+        <div class="profile-hero-banner"></div>
+        <div class="profile-hero-body">
+          <div class="profile-avatar-ring">
+            <div class="profile-avatar" id="p-avatar">👤</div>
+          </div>
+          <div class="profile-info">
+            <div class="profile-name" id="p-name">Loading...</div>
+            <div class="profile-meta" id="p-meta">—</div>
+            <div class="profile-badges" id="p-badges"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-icon">🪙</div>
+          <div class="stat-val" id="st-coins">—</div>
+          <div class="stat-label">Total Coins</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">👥</div>
+          <div class="stat-val" id="st-referrals">—</div>
+          <div class="stat-label">Referrals</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🤖</div>
+          <div class="stat-val" id="st-bots">—</div>
+          <div class="stat-label">Active Bots</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📅</div>
+          <div class="stat-val" id="st-days">—</div>
+          <div class="stat-label">Days Active</div>
+        </div>
+      </div>
+
+      <!-- Referral -->
+      <div class="section-card">
+        <div class="section-hdr"><span class="section-hdr-icon">🎁</span><span class="section-hdr-title">Referral Code</span></div>
+        <div class="section-body">
+          <p style="font-size:12px;color:var(--text-dim);font-family:var(--mono);margin-bottom:14px">Share your code — earn 5 coins for every friend who joins.</p>
+          <div class="copy-row">
+            <input class="form-input copy-input" id="referral-code" readonly />
+            <button class="btn btn-secondary" onclick="copyReferral()">📋 Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Change Password -->
+      <div class="section-card">
+        <div class="section-hdr"><span class="section-hdr-icon">🔐</span><span class="section-hdr-title">Change Password</span></div>
+        <div class="section-body">
+          <div class="form-group">
+            <label class="form-label">Current Password</label>
+            <input class="form-input" type="password" id="cur-pw" placeholder="••••••••" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">New Password</label>
+              <input class="form-input" type="password" id="new-pw" placeholder="min 8 chars" oninput="checkStrength(this.value)" />
+              <div id="pw-strength-bar" class="pw-strength"></div>
+              <div id="pw-hint" class="pw-hint"></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Confirm New Password</label>
+              <input class="form-input" type="password" id="conf-pw" placeholder="••••••••" />
+            </div>
+          </div>
+          <button class="btn btn-primary" id="pw-btn" onclick="changePassword()">🔐 Update Password</button>
+        </div>
+      </div>
+
+      <!-- Activity Log -->
+      <div class="section-card">
+        <div class="section-hdr"><span class="section-hdr-icon">📋</span><span class="section-hdr-title">Recent Activity</span></div>
+        <div class="section-body">
+          <div class="activity-list" id="activity-list">
+            <div class="skeleton" style="height:40px;width:100%"></div>
+            <div class="skeleton" style="height:40px;width:100%;opacity:0.7"></div>
+            <div class="skeleton" style="height:40px;width:100%;opacity:0.4"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-wrap" id="toast-wrap"></div>
+
+  <script>
+    const token=localStorage.getItem('ns_token');
+    if(!token){window.location.href='/login.html';}
+
+    const hdr={'Authorization':'Bearer '+token,'Content-Type':'application/json'};
+    let userData=null;
+
+    function toast(msg,type='info'){
+      const w=document.getElementById('toast-wrap');
+      const t=document.createElement('div');t.className='toast '+type;
+      const icons={success:'✅',error:'❌',info:'ℹ️'};
+      t.innerHTML=`<span>${icons[type]||'🔔'}</span><span>${msg}</span>`;
+      w.appendChild(t);setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),400)},3000);
+    }
+
+    async function loadProfile(){
+      try{
+        const r=await fetch('/api/auth/me',{headers:hdr});
+        if(!r.ok){window.location.href='/login.html';return;}
+        userData=await r.json();
+        const u=userData;
+        const initials=(u.username||'?')[0].toUpperCase();
+        document.getElementById('p-avatar').textContent=initials;
+        document.getElementById('sb-avatar').textContent=initials;
+        document.getElementById('p-name').textContent=u.username;
+        document.getElementById('sb-name').textContent=u.username;
+        document.getElementById('sb-role').textContent=u.role;
+        document.getElementById('top-coins').textContent=u.coins||0;
+        document.getElementById('p-meta').textContent=`@${u.username} · Joined ${new Date(u.createdAt||Date.now()).toLocaleDateString()}`;
+        document.getElementById('st-coins').textContent=u.coins||0;
+        document.getElementById('st-referrals').textContent=u.referralCount||0;
+        document.getElementById('referral-code').value=u.referralCode||'—';
+        const joined=new Date(u.createdAt||Date.now());
+        const days=Math.floor((Date.now()-joined)/86400000);
+        document.getElementById('st-days').textContent=days;
+        const badges=document.getElementById('p-badges');
+        badges.innerHTML=`<span class="pbadge ${u.role}">${u.role==='admin'?'⚡':'👤'} ${u.role}</span>`;
+        if(u.hasVIPAccess)badges.innerHTML+=`<span class="pbadge vip">👑 VIP</span>`;
+      }catch(e){toast('Failed to load profile','error');}
+    }
+
+    async function loadBotCount(){
+      try{
+        const r=await fetch('/api/sessions',{headers:hdr});
+        if(r.ok){const s=await r.json();const running=s.filter(x=>x.status==='running').length;document.getElementById('st-bots').textContent=running;}
+      }catch{}
+    }
+
+    async function loadActivity(){
+      try{
+        const r=await fetch('/api/activity',{headers:hdr});
+        const acts=await r.json();
+        const el=document.getElementById('activity-list');
+        const actIcons={login:'🔑','change-password':'🔐','bot-start':'🟢','bot-stop':'🔴',signup:'🎉'};
+        if(!acts.length){el.innerHTML='<p style="color:var(--text-muted);font-size:12px;font-family:var(--mono)">No activity recorded yet.</p>';return;}
+        el.innerHTML=acts.slice(0,15).map(a=>`
+          <div class="activity-item">
+            <span class="activity-icon">${actIcons[a.action]||'📌'}</span>
+            <span class="activity-action">${a.action}</span>
+            <span class="activity-ts">${new Date(a.ts).toLocaleString()}</span>
+          </div>`).join('');
+      }catch{document.getElementById('activity-list').innerHTML='<p style="color:var(--text-muted);font-size:12px;font-family:var(--mono)">Activity unavailable.</p>';}
+    }
+
+    function checkStrength(val){
+      const bar=document.getElementById('pw-strength-bar');
+      const hint=document.getElementById('pw-hint');
+      let score=0;
+      if(val.length>=8)score++;if(val.length>=12)score++;
+      if(/[A-Z]/.test(val))score++;if(/[0-9]/.test(val))score++;if(/[^A-Za-z0-9]/.test(val))score++;
+      const levels=[{pct:'20%',bg:'#ef4444',label:'Very weak'},{pct:'40%',bg:'#f59e0b',label:'Weak'},{pct:'60%',bg:'#f59e0b',label:'Fair'},{pct:'80%',bg:'#22c55e',label:'Strong'},{pct:'100%',bg:'#06b6d4',label:'Very strong'}];
+      const l=levels[Math.min(score,4)];
+      bar.style.width=val?l.pct:'0%';bar.style.background=l.bg;
+      hint.textContent=val?l.label:'';
+    }
+
+    async function changePassword(){
+      const cur=document.getElementById('cur-pw').value;
+      const nw=document.getElementById('new-pw').value;
+      const cf=document.getElementById('conf-pw').value;
+      if(!cur||!nw||!cf){toast('All password fields required','error');return;}
+      if(nw!==cf){toast('New passwords do not match','error');return;}
+      if(nw.length<8){toast('Password must be at least 8 characters','error');return;}
+      const btn=document.getElementById('pw-btn');
+      btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Updating...';
+      try{
+        const r=await fetch('/api/auth/change-password',{method:'POST',headers:hdr,body:JSON.stringify({currentPassword:cur,newPassword:nw})});
+        const d=await r.json();
+        if(!r.ok){toast(d.error||'Failed','error');}
+        else{toast('Password updated successfully!','success');document.getElementById('cur-pw').value='';document.getElementById('new-pw').value='';document.getElementById('conf-pw').value='';checkStrength('');}
+      }catch{toast('Network error','error');}
+      btn.disabled=false;btn.innerHTML='🔐 Update Password';
+    }
+
+    function copyReferral(){
+      const val=document.getElementById('referral-code').value;
+      navigator.clipboard.writeText(val).then(()=>toast('Referral code copied!','success')).catch(()=>toast('Copy failed','error'));
+    }
+
+    function logout(){
+      localStorage.removeItem('ns_token');localStorage.removeItem('ns_user');
+      window.location.href='/login.html';
+    }
+
+    loadProfile();loadBotCount();loadActivity();
+  </script>
+</body>
+</html>
