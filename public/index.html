@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NOVASPARK V6 · Dashboard</title>
+  <title>NOVASPARK V7 · Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -417,7 +417,7 @@
       <div class="sidebar-logo-icon">⚡</div>
       <div>
         <div class="sidebar-logo-text">NOVA<span>SPARK</span></div>
-        <span class="sidebar-logo-badge">V6.0.0</span>
+        <span class="sidebar-logo-badge">V7.0.0</span>
       </div>
     </div>
 
@@ -626,7 +626,7 @@
     <footer class="page-footer">
       <div id="v5-server-stats">⚡ Loading server stats...</div>
       <div>
-        NOVASPARK V6 &nbsp;•&nbsp;
+        NOVASPARK V7 &nbsp;•&nbsp;
         <a href="https://render.com" target="_blank">Render.com</a> &nbsp;•&nbsp;
         <a href="/terms.html">Terms</a> &nbsp;•&nbsp;
         <a href="/bot-features.html">Bot Features</a> &nbsp;•&nbsp;
@@ -829,6 +829,24 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-cleanup" onclick="closeUpgradeModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- V7: Per-session Log Viewer Modal -->
+  <div class="modal-overlay" id="session-log-modal-overlay">
+    <div class="modal" style="max-width:640px">
+      <div class="modal-header">
+        <span class="modal-title">📋 Session Logs</span>
+        <button class="modal-close" onclick="closeSessionLogModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="session-log-id-display" style="font-family:var(--mono);font-size:11px;color:var(--text-dim);margin-bottom:10px;"></div>
+        <div id="session-log-content" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;max-height:340px;overflow-y:auto;font-family:var(--mono);font-size:11px;color:var(--text-dim);white-space:pre-wrap;line-height:1.6;">Loading logs…</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="refreshSessionLogs()">↻ Refresh</button>
+        <button class="btn btn-cleanup" onclick="closeSessionLogModal()">Close</button>
       </div>
     </div>
   </div>
@@ -1045,16 +1063,17 @@ function renderSessions() {
         (sess.status === 'running' || sess.status === 'starting' ? '<button class="btn btn-stop" onclick="stopSession(\'' + sess.id + '\')">■ Stop</button>' : '') +
         '<button class="btn btn-restart" onclick="restartSession(\'' + sess.id + '\')">↺ Restart</button>' +
         '<button class="btn btn-edit" onclick="editSession(\'' + sess.id + '\')">✎ Edit</button>' +
+        '<button class="btn" style="background:var(--panel2);border:1px solid var(--border);color:var(--text-dim)" onclick="viewSessionLogs(\'' + sess.id + '\')">📋 Logs</button>' +
         '<button class="btn btn-danger" onclick="deleteSession(\'' + sess.id + '\')">🗑</button>' +
       '</div>' +
     '</div>';
   }).join('');
 }
 
-// Bot Actions
+// Bot Actions — V7 RESTful session sub-routes
 async function startSession(id) {
   try {
-    const r = await fetch('/api/bot/start', { method:'POST', headers: authHeaders(), body: JSON.stringify({ sessionId: id }) });
+    const r = await fetch('/api/sessions/' + id + '/start', { method:'POST', headers: authHeaders() });
     const d = await r.json();
     if (d.ok) toast('Bot starting…', 'ok');
     else toast(d.error || 'Failed to start', 'error');
@@ -1064,17 +1083,19 @@ async function startSession(id) {
 
 async function stopSession(id) {
   try {
-    const r = await fetch('/api/bot/stop', { method:'POST', headers: authHeaders(), body: JSON.stringify({ sessionId: id }) });
+    const r = await fetch('/api/sessions/' + id + '/stop', { method:'POST', headers: authHeaders() });
     const d = await r.json();
     if (d.ok) toast('Bot stopping…', 'ok');
+    else toast(d.error || 'Failed to stop', 'error');
   } catch (err) { toast('Error: ' + err.message, 'error'); }
 }
 
 async function restartSession(id) {
   try {
-    const r = await fetch('/api/bot/restart', { method:'POST', headers: authHeaders(), body: JSON.stringify({ sessionId: id }) });
+    const r = await fetch('/api/sessions/' + id + '/restart', { method:'POST', headers: authHeaders() });
     const d = await r.json();
     if (d.ok) toast('Bot restarting…', 'ok');
+    else toast(d.error || 'Failed to restart', 'error');
   } catch (err) { toast('Error: ' + err.message, 'error'); }
 }
 
@@ -1423,6 +1444,33 @@ function openRecoveryModal() {
   loadDeletedBots();
 }
 function closeRecoveryModal() { document.getElementById('recovery-modal-overlay').classList.remove('active'); }
+
+// ── V7: Per-session log viewer ─────────────────────────────────────────────
+let _currentLogSessionId = null;
+async function viewSessionLogs(id) {
+  _currentLogSessionId = id;
+  document.getElementById('session-log-id-display').textContent = 'Session ID: ' + id;
+  document.getElementById('session-log-content').textContent = 'Loading logs…';
+  document.getElementById('session-log-modal-overlay').classList.add('active');
+  await refreshSessionLogs();
+}
+async function refreshSessionLogs() {
+  if (!_currentLogSessionId) return;
+  const container = document.getElementById('session-log-content');
+  try {
+    const r = await fetch('/api/sessions/' + _currentLogSessionId + '/logs', { headers: authHeaders() });
+    const d = await r.json();
+    const logs = Array.isArray(d) ? d : (d.logs || []);
+    if (!logs.length) { container.textContent = 'No logs available yet.'; return; }
+    container.textContent = logs.map(l => typeof l === 'string' ? l : JSON.stringify(l)).join('\n');
+    container.scrollTop = container.scrollHeight;
+  } catch (err) { container.textContent = 'Error loading logs: ' + err.message; }
+}
+function closeSessionLogModal() {
+  document.getElementById('session-log-modal-overlay').classList.remove('active');
+  _currentLogSessionId = null;
+}
+document.getElementById('session-log-modal-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeSessionLogModal(); });
 
 async function loadDeletedBots() {
   const container = document.getElementById('deleted-bots-container');
