@@ -2137,7 +2137,7 @@ app.get('/api/status', (req, res) => {
     pingCount: state.pingCount,
     cleanCount: state.cleanCount,
     mem,
-    version: '7.0.0'
+    version: '8.0.0'
   });
 });
 
@@ -2167,7 +2167,7 @@ app.get('/api/stats', requireAuth, async (req, res) => {
     const uptimeSecs = Math.floor((Date.now() - state.startTime) / 1000);
 
     res.json({
-      version: '7.0.0',
+      version: '8.0.0',
       uptime: uptimeSecs,
       activeBots,
       totalUsers,
@@ -2188,7 +2188,7 @@ app.get('/api/stats', requireAuth, async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 app.get('/api/bot-features', (req, res) => {
   res.json({
-    version: '7.0.0',
+    version: '8.0.0',
     botName: 'NovaSpark Bot',
     categories: [
       {
@@ -2417,11 +2417,165 @@ app.get('/api/admin/logs', requireAdmin, (req, res) => {
   return res.json({ logs, total: logs.length });
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// NODES BANK — EcoCash Payment Requests  (NEW v8)
+// ─────────────────────────────────────────────────────────────────────────────
+const BANK_FILE    = path.join(DATA_DIR, 'bank-orders.json');
+const ECOCASH_NUM  = process.env.ECOCASH_NUMBER || '263786831091';
+
+const BANK_PLANS = {
+  basic: { name: 'Basic',  price_usd: 5,  price_zwg: 1800, maxBots: 3,  durationDays: 30 },
+  pro:   { name: 'Pro',    price_usd: 10, price_zwg: 3600, maxBots: 10, durationDays: 30 },
+  vip:   { name: 'VIP',    price_usd: 20, price_zwg: 7200, maxBots: 10, durationDays: 30, vip: true }
+};
+
+function loadBankOrders() {
+  try { return JSON.parse(fs.readFileSync(BANK_FILE, 'utf8')); } catch { return []; }
+}
+function saveBankOrders(orders) {
+  fs.writeFileSync(BANK_FILE, JSON.stringify(orders, null, 2));
+}
+
+// GET /api/bank/plans — public plan listing
+app.get('/api/bank/plans', (req, res) => {
+  res.json({ plans: BANK_PLANS, ecocash: ECOCASH_NUM });
+});
+
+// POST /api/bank/order — user submits payment proof
+app.post('/api/bank/order', requireAuth, async (req, res) => {
+  const { plan, txRef, phone } = req.body;
+  if (!plan || !BANK_PLANS[plan]) return res.status(400).json({ error: 'Invalid plan' });
+  if (!txRef || String(txRef).trim().length < 3) return res.status(400).json({ error: 'Transaction reference required' });
+
+  const orders = loadBankOrders();
+  if (orders.find(o => o.txRef === String(txRef).trim())) {
+    return res.status(409).json({ error: 'Transaction reference already submitted' });
+  }
+
+  const order = {
+    id: uuidv4(),
+    userId: String(req.user.id || req.user._id),
+    username: req.user.username,
+    plan,
+    planName: BANK_PLANS[plan].name,
+    price_usd: BANK_PLANS[plan].price_usd,
+    price_zwg: BANK_PLANS[plan].price_zwg,
+    txRef: String(txRef).trim(),
+    phone: String(phone || '').trim(),
+    status: 'pending',
+    submittedAt: new Date().toISOString(),
+    reviewedAt: null,
+    reviewedBy: null,
+    note: ''
+  };
+
+  orders.push(order);
+  saveBankOrders(orders);
+
+  pushNotification(order.userId, '💳 Payment Submitted', `Your ${order.planName} plan order (ref: ${order.txRef}) has been received. Awaiting admin approval.`, '💳');
+  const allUsers = loadUsers();
+  const adminUser = allUsers.find(u => u.role === 'admin');
+  if (adminUser) pushNotification(String(adminUser.id || adminUser._id), '🏦 New Bank Order', `${order.username} submitted a ${order.planName} order. Ref: ${order.txRef}`, '🏦');
+
+  logActivity(order.userId, order.username, 'bank_order_submitted', { plan, txRef: order.txRef });
+  res.json({ ok: true, orderId: order.id, message: 'Order submitted. Admin will activate within 24 hours.' });
+});
+
+// GET /api/bank/orders — user gets their own orders
+app.get('/api/bank/orders', requireAuth, (req, res) => {
+  const orders = loadBankOrders();
+  const mine = orders.filter(o => o.userId === String(req.user.id || req.user._id));
+  res.json(mine.reverse());
+});
+
+// GET /api/bank/orders/all — admin gets all orders
+app.get('/api/bank/orders/all', requireAdmin, (req, res) => {
+  const orders = loadBankOrders();
+  res.json(orders.reverse());
+});
+
+// POST /api/bank/orders/:id/approve — admin approves order
+app.post('/api/bank/orders/:id/approve', requireAdmin, async (req, res) => {
+  const orders = loadBankOrders();
+  const idx = orders.findIndex(o => o.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Order not found' });
+  const order = orders[idx];
+  if (order.status !== 'pending') return res.status(400).json({ error: 'Order already processed' });
+
+  const plan = BANK_PLANS[order.plan];
+  const users = loadUsers();
+  const uIdx = users.findIndex(u => String(u.id || u._id) === order.userId || u.username === order.username);
+  if (uIdx !== -1) {
+    users[uIdx].plan = order.plan === 'vip' ? 'pro' : order.plan;
+    if (order.plan === 'vip') users[uIdx].hasVIPAccess = true;
+    users[uIdx].planExpiresAt = new Date(Date.now() + plan.durationDays * 86400000).toISOString();
+    saveUsers(users);
+  }
+
+  orders[idx].status = 'approved';
+  orders[idx].reviewedAt = new Date().toISOString();
+  orders[idx].reviewedBy = req.user.username;
+  saveBankOrders(orders);
+
+  pushNotification(order.userId, '✅ Plan Activated!', `Your ${order.planName} plan has been activated. Enjoy your bots!`, '✅');
+  logActivity(order.userId, order.username, 'bank_plan_activated', { plan: order.plan, approvedBy: req.user.username });
+  res.json({ ok: true });
+});
+
+// POST /api/bank/orders/:id/reject — admin rejects order
+app.post('/api/bank/orders/:id/reject', requireAdmin, async (req, res) => {
+  const orders = loadBankOrders();
+  const idx = orders.findIndex(o => o.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Order not found' });
+  const { reason } = req.body;
+
+  orders[idx].status = 'rejected';
+  orders[idx].reviewedAt = new Date().toISOString();
+  orders[idx].reviewedBy = req.user.username;
+  orders[idx].note = reason || '';
+  saveBankOrders(orders);
+
+  pushNotification(orders[idx].userId, '❌ Payment Rejected', `Your ${orders[idx].planName} order was not approved. ${reason || 'Contact admin for details.'}`, '❌');
+  res.json({ ok: true });
+});
+
+// ── NEW v8: Bot Uptime Tracker — per-session live stats ───────────────────────
+app.get('/api/sessions/:id/uptime', requireAuth, async (req, res) => {
+  try {
+    const sessions = loadSessions();
+    const sess = sessions.find(s => String(s.id) === req.params.id || String(s._id) === req.params.id);
+    if (!sess) return res.status(404).json({ error: 'Session not found' });
+    if (String(sess.ownerId) !== String(req.user.id || req.user._id) && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    const pid = state.botProcesses[req.params.id];
+    const isRunning = !!(pid);
+    const uptimeMs = (isRunning && sess.startTime) ? Date.now() - new Date(sess.startTime).getTime() : 0;
+    const uptimeSec = Math.max(0, Math.floor(uptimeMs / 1000));
+    res.json({
+      sessionId: req.params.id,
+      status: sess.status || 'stopped',
+      isRunning,
+      uptimeSec,
+      uptimeHuman: formatUptime(uptimeSec),
+      startTime: sess.startTime || null
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+function formatUptime(sec) {
+  if (!sec || sec <= 0) return '—';
+  if (sec < 60) return `${sec}s`;
+  if (sec < 3600) return `${Math.floor(sec/60)}m ${sec%60}s`;
+  const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
+  return `${h}h ${m}m ${s}s`;
+}
+
 // ── NEW v7: Server-sent health details ────────────────────────────────────────
 app.get('/health', (req, res) => res.json({
   status: 'ok',
   ts: Date.now(),
-  version: '7.0.0',
+  version: '8.0.0',
   botName: 'NovaSpark Bot',
   uptime: Math.floor((Date.now() - state.startTime) / 1000),
   storage: useMongoDB ? 'mongodb' : 'file',
@@ -2438,6 +2592,8 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.ht
 app.get('/panel-bots.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'panel-bots.html')));
 app.get('/bot-features', (req, res) => res.sendFile(path.join(__dirname, 'public', 'bot-features.html')));
 app.get('/bot-features.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'bot-features.html')));
+app.get('/bank.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'bank.html')));
+app.get('/bank', (req, res) => res.sendFile(path.join(__dirname, 'public', 'bank.html')));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BOT PROCESS MANAGER
@@ -2732,7 +2888,7 @@ wss.on('connection', async (ws) => {
       pingCount: state.pingCount,
       cleanCount: state.cleanCount,
       mem: process.memoryUsage(),
-      version: '7.0.0'
+      version: '8.0.0'
     }
   }));
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NOVASPARK V7 · Dashboard</title>
+  <title>NOVASPARK V8 · Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -417,7 +417,7 @@
       <div class="sidebar-logo-icon">⚡</div>
       <div>
         <div class="sidebar-logo-text">NOVA<span>SPARK</span></div>
-        <span class="sidebar-logo-badge">V7.0.0</span>
+        <span class="sidebar-logo-badge">V8.0.0</span>
       </div>
     </div>
 
@@ -455,6 +455,9 @@
       <div class="nav-item" onclick="openRecoveryModal()">
         <span class="nav-item-icon">♻️</span> Recover Bots
       </div>
+      <a class="nav-item" href="/bank.html" style="text-decoration:none;color:inherit;">
+        <span class="nav-item-icon">🏦</span> Nodes Bank
+      </a>
     </div>
 
     <div class="sidebar-section">
@@ -626,7 +629,7 @@
     <footer class="page-footer">
       <div id="v5-server-stats">⚡ Loading server stats...</div>
       <div>
-        NOVASPARK V7 &nbsp;•&nbsp;
+        NOVASPARK V8 &nbsp;•&nbsp;
         <a href="https://render.com" target="_blank">Render.com</a> &nbsp;•&nbsp;
         <a href="/terms.html">Terms</a> &nbsp;•&nbsp;
         <a href="/bot-features.html">Bot Features</a> &nbsp;•&nbsp;
@@ -1056,6 +1059,7 @@ function renderSessions() {
         '<div class="session-info-item"><div class="session-info-label">Prefix</div><div class="session-info-value">' + escHtml(sess.prefix || '.') + '</div></div>' +
         '<div class="session-info-item"><div class="session-info-label">Owner #</div><div class="session-info-value">' + escHtml(sess.ownerNumber || '—') + '</div></div>' +
         '<div class="session-info-item"><div class="session-info-label">Timezone</div><div class="session-info-value">' + escHtml(sess.timezone || '—') + '</div></div>' +
+        '<div class="session-info-item"><div class="session-info-label">Uptime</div><div class="session-info-value" id="uptime-' + sess.id + '" style="color:var(--green);font-family:var(--mono);font-size:11px">—</div></div>' +
       '</div>' +
       (sess.paidUntil ? '<div style="font-size:10px;color:var(--text-dim);margin-bottom:12px;">Paid until: ' + new Date(sess.paidUntil).toLocaleString() + '</div>' : '') +
       '<div class="session-controls">' +
@@ -1797,6 +1801,38 @@ document.querySelectorAll('.section-card, .sc-wrap, .stat-card, .stats-bar').for
   el.style.animationDelay = (i * 0.05) + 's';
   el.classList.add('card-animate');
 });
+
+// ── V8: Live Bot Uptime Poller ─────────────────────────────────────────────
+let _uptimeTimers = {};
+function startUptimePolling() {
+  // Clear old timers
+  Object.values(_uptimeTimers).forEach(t => clearInterval(t));
+  _uptimeTimers = {};
+  if (!sessions || !sessions.length) return;
+  sessions.forEach(sess => {
+    if (!sess.id) return;
+    // Immediately fetch, then every 10s
+    fetchSessionUptime(sess.id);
+    _uptimeTimers[sess.id] = setInterval(() => fetchSessionUptime(sess.id), 10000);
+  });
+}
+async function fetchSessionUptime(id) {
+  const el = document.getElementById('uptime-' + id);
+  if (!el) { clearInterval(_uptimeTimers[id]); delete _uptimeTimers[id]; return; }
+  try {
+    const r = await fetch('/api/sessions/' + id + '/uptime', { headers: authHeaders() });
+    if (!r.ok) { el.textContent = '—'; return; }
+    const d = await r.json();
+    el.textContent = d.isRunning ? d.uptimeHuman : '—';
+    el.style.color = d.isRunning ? 'var(--green)' : 'var(--text-muted)';
+  } catch { el.textContent = '—'; }
+}
+// Hook into session renders
+const _origRS = window.renderSessions;
+window.renderSessions = function() {
+  if (typeof _origRS === 'function') _origRS.apply(this, arguments);
+  setTimeout(startUptimePolling, 400);
+};
 </script>
 
 </body>

@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en" data-v7-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NOVASPARK V8 · Nodes Bank</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0a0e1a;
+      --panel:    #111827;
+      --panel2:   #1a2236;
+      --border:   #1e2d45;
+      --accent:   #6366f1;
+      --accent2:  #8b5cf6;
+      --accent3:  #06b6d4;
+      --green:    #10b981;
+      --green-b:  #10b98133;
+      --red:      #ef4444;
+      --red-b:    #ef444433;
+      --gold:     #f59e0b;
+      --gold-b:   #f59e0b33;
+      --text:     #e2e8f0;
+      --text-dim: #94a3b8;
+      --text-muted:#64748b;
+      --mono:     'JetBrains Mono', monospace;
+      --ecocash:  #00a651;
+      --ecocash-b:#00a65133;
+    }
+
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
+
+    /* ── Sidebar layout ── */
+    .layout { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: 220px; min-width: 220px; background: var(--panel);
+      border-right: 1px solid var(--border); padding: 20px 14px;
+      display: flex; flex-direction: column; gap: 4px;
+      position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; z-index: 50;
+    }
+    .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 8px 6px 20px; }
+    .sidebar-logo-icon { font-size: 22px; background: linear-gradient(135deg,#6366f1,#8b5cf6); border-radius: 10px; width: 38px; height: 38px; display: grid; place-items: center; }
+    .sidebar-logo-text { font-size: 15px; font-weight: 700; letter-spacing: 0.05em; }
+    .sidebar-logo-text span { color: var(--accent); }
+    .sidebar-logo-badge { font-size: 9px; font-family: var(--mono); background: var(--accent2); color: #fff; border-radius: 4px; padding: 1px 5px; margin-left: 2px; vertical-align: middle; }
+    .sidebar-section-label { font-size: 10px; color: var(--text-muted); font-family: var(--mono); letter-spacing: 0.1em; text-transform: uppercase; padding: 12px 6px 4px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text-dim); transition: all .15s; text-decoration: none; }
+    .nav-item:hover, .nav-item.active { background: var(--panel2); color: var(--text); }
+    .nav-item-icon { font-size: 16px; width: 20px; text-align: center; }
+    .nav-item.active { border-left: 3px solid var(--accent); }
+    .sidebar-user { margin-top: auto; padding: 12px 8px 0; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg,var(--accent),var(--accent2)); display: grid; place-items: center; font-size: 14px; font-weight: 700; color: #fff; }
+    .user-name { font-size: 13px; font-weight: 600; }
+    .user-plan { font-size: 10px; color: var(--accent); font-family: var(--mono); text-transform: uppercase; }
+
+    /* ── Main content ── */
+    .main { margin-left: 220px; flex: 1; padding: 28px 32px; min-height: 100vh; }
+    @media(max-width:768px){ .sidebar{display:none;} .main{margin-left:0;padding:20px 16px;} }
+
+    .page-header { margin-bottom: 28px; }
+    .page-title { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+    .page-title span { color: var(--accent); }
+    .page-sub { font-size: 13px; color: var(--text-dim); font-family: var(--mono); margin-top: 4px; }
+
+    /* ── Plan cards ── */
+    .plans-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .plan-card {
+      background: var(--panel); border: 2px solid var(--border); border-radius: 14px;
+      padding: 22px 20px; cursor: pointer; transition: all .2s; position: relative; overflow: hidden;
+    }
+    .plan-card::before { content:''; position:absolute; inset:0; background: linear-gradient(135deg, var(--accent)08, transparent); opacity:0; transition:.2s; }
+    .plan-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .plan-card:hover::before { opacity: 1; }
+    .plan-card.selected { border-color: var(--accent); background: var(--panel2); box-shadow: 0 0 0 3px var(--accent)33; }
+    .plan-card.vip-card:hover, .plan-card.vip-card.selected { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-b); }
+    .plan-badge { position: absolute; top: 12px; right: 12px; font-size: 9px; font-family: var(--mono); padding: 2px 7px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
+    .plan-badge.popular { background: var(--accent); color: #fff; }
+    .plan-badge.best { background: var(--gold); color: #000; }
+    .plan-icon { font-size: 28px; margin-bottom: 10px; }
+    .plan-name { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+    .plan-price { font-size: 28px; font-weight: 800; color: var(--accent); }
+    .plan-price.vip-price { color: var(--gold); }
+    .plan-price span { font-size: 14px; font-weight: 400; color: var(--text-dim); }
+    .plan-zwg { font-size: 12px; color: var(--text-muted); font-family: var(--mono); margin-top: 2px; margin-bottom: 12px; }
+    .plan-features { list-style: none; margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+    .plan-features li { font-size: 12px; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+    .plan-features li::before { content: '✓'; color: var(--green); font-weight: 700; }
+    .plan-select-indicator { margin-top: 14px; font-size: 11px; font-family: var(--mono); color: var(--accent); display: none; }
+    .plan-card.selected .plan-select-indicator { display: block; }
+
+    /* ── Payment section ── */
+    .payment-section { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 24px; }
+    .section-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .section-title .tag { font-size: 9px; font-family: var(--mono); background: var(--ecocash); color: #fff; padding: 2px 6px; border-radius: 4px; }
+
+    /* EcoCash instructions */
+    .ecocash-card {
+      background: linear-gradient(135deg, #00a651, #007a3d);
+      border-radius: 12px; padding: 20px; margin-bottom: 20px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .ecocash-logo { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: 0.05em; }
+    .ecocash-logo span { color: #fffb8a; }
+    .ecocash-number { font-family: var(--mono); font-size: 24px; font-weight: 800; color: #fff; letter-spacing: 0.1em; background: rgba(0,0,0,.2); border-radius: 8px; padding: 8px 16px; display: inline-block; margin-top: 4px; }
+    .ecocash-name { font-size: 12px; color: rgba(255,255,255,.8); }
+    .ecocash-steps { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+    .ecocash-step { display: flex; gap: 10px; align-items: flex-start; }
+    .ecocash-step-num { background: rgba(255,255,255,.2); color: #fff; border-radius: 50%; width: 20px; height: 20px; display: grid; place-items: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+    .ecocash-step-text { font-size: 12px; color: rgba(255,255,255,.9); line-height: 1.5; }
+    .ecocash-step-text strong { color: #fff; }
+
+    /* Form */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    @media(max-width:600px){ .form-row { grid-template-columns:1fr; } }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label { font-size: 11px; font-weight: 600; color: var(--text-dim); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.06em; }
+    .form-input {
+      background: var(--panel2); border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 12px; color: var(--text); font-size: 13px; font-family: 'Inter', sans-serif;
+      outline: none; transition: border-color .15s; width: 100%;
+    }
+    .form-input:focus { border-color: var(--accent); }
+    .form-input.ecocash-input:focus { border-color: var(--ecocash); }
+    .form-hint { font-size: 11px; color: var(--text-muted); font-family: var(--mono); }
+
+    .selected-plan-summary {
+      background: var(--panel2); border: 1px solid var(--border); border-radius: 10px;
+      padding: 14px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .sps-label { font-size: 12px; color: var(--text-dim); }
+    .sps-value { font-size: 14px; font-weight: 700; color: var(--accent); }
+    .sps-value.vip { color: var(--gold); }
+
+    .btn-submit {
+      background: linear-gradient(135deg, var(--ecocash), #007a3d);
+      border: none; border-radius: 10px; padding: 13px 32px;
+      color: #fff; font-size: 14px; font-weight: 700; cursor: pointer;
+      width: 100%; transition: opacity .15s; margin-top: 4px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-submit:hover { opacity: .88; }
+    .btn-submit:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* ── Orders history ── */
+    .orders-table { width: 100%; border-collapse: collapse; }
+    .orders-table th { font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+    .orders-table td { font-size: 12px; padding: 10px 12px; border-bottom: 1px solid var(--border)88; vertical-align: middle; }
+    .orders-table tr:last-child td { border-bottom: none; }
+    .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-family: var(--mono); font-weight: 600; text-transform: uppercase; }
+    .status-badge.pending  { background: var(--gold-b); color: var(--gold); }
+    .status-badge.approved { background: var(--green-b); color: var(--green); }
+    .status-badge.rejected { background: var(--red-b); color: var(--red); }
+    .empty-state { text-align: center; padding: 32px; color: var(--text-muted); font-size: 13px; }
+
+    /* Toast */
+    #toast { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+    .toast-msg { padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 500; color: #fff; max-width: 320px; animation: slideIn .3s ease; box-shadow: 0 4px 20px rgba(0,0,0,.4); }
+    .toast-msg.ok    { background: var(--green); }
+    .toast-msg.error { background: var(--red); }
+    .toast-msg.warn  { background: var(--gold); color: #000; }
+    @keyframes slideIn { from{transform:translateX(60px);opacity:0} to{transform:translateX(0);opacity:1} }
+
+    /* Admin orders panel */
+    .admin-orders-section { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 24px; display: none; }
+    .admin-actions { display: flex; gap: 8px; }
+    .btn-sm { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid; transition: opacity .15s; }
+    .btn-approve { background: var(--green-b); color: var(--green); border-color: var(--green); }
+    .btn-reject  { background: var(--red-b); color: var(--red); border-color: var(--red); }
+    .btn-sm:hover { opacity: .75; }
+    .btn-sm:disabled { opacity: .35; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">⚡</div>
+      <div>
+        <div class="sidebar-logo-text">NOVA<span>SPARK</span></div>
+        <span class="sidebar-logo-badge">V8.0.0</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section-label">Main</div>
+    <a class="nav-item" href="/index.html"><span class="nav-item-icon">📊</span> Dashboard</a>
+    <a class="nav-item" href="/panel-bots.html"><span class="nav-item-icon">🤖</span> Panel Bots</a>
+    <a class="nav-item" href="/bot-features.html"><span class="nav-item-icon">⚙️</span> Bot Features</a>
+    <a class="nav-item" href="/leaderboard.html"><span class="nav-item-icon">🏆</span> Leaderboard</a>
+    <a class="nav-item" href="/notifications.html"><span class="nav-item-icon">🔔</span> Notifications</a>
+    <a class="nav-item" href="/profile.html"><span class="nav-item-icon">👤</span> Profile</a>
+
+    <div class="sidebar-section-label">Account</div>
+    <a class="nav-item active" href="/bank.html"><span class="nav-item-icon">🏦</span> Nodes Bank</a>
+
+    <div class="sidebar-user" style="margin-top:auto">
+      <div class="user-avatar" id="user-avatar-sidebar">?</div>
+      <div>
+        <div class="user-name" id="user-name-sidebar">Loading…</div>
+        <div class="user-plan" id="user-plan-sidebar">—</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="page-header">
+      <div class="page-title">🏦 Nodes <span>Bank</span></div>
+      <div class="page-sub">// Buy a plan via EcoCash · Instant activation after admin approval</div>
+    </div>
+
+    <!-- Plan Selection -->
+    <div class="plans-grid" id="plans-grid">
+      <!-- filled by JS -->
+    </div>
+
+    <!-- Payment Section -->
+    <div class="payment-section">
+      <div class="section-title">💳 Pay via EcoCash <span class="tag">ZIMBABWE</span></div>
+
+      <!-- EcoCash card -->
+      <div class="ecocash-card">
+        <div class="ecocash-logo">Eco<span>Cash</span></div>
+        <div>
+          <div class="ecocash-name">Send payment to:</div>
+          <div class="ecocash-number" id="ecocash-number">263786831091</div>
+          <div class="ecocash-name" style="margin-top:4px" id="ecocash-name-display">NovaSpark Nodes</div>
+        </div>
+        <div class="ecocash-steps">
+          <div class="ecocash-step">
+            <div class="ecocash-step-num">1</div>
+            <div class="ecocash-step-text">Dial <strong>*151#</strong> on your phone or open the EcoCash app</div>
+          </div>
+          <div class="ecocash-step">
+            <div class="ecocash-step-num">2</div>
+            <div class="ecocash-step-text">Select <strong>Send Money</strong> → enter number <strong id="ecocash-inline">263786831091</strong></div>
+          </div>
+          <div class="ecocash-step">
+            <div class="ecocash-step-num">3</div>
+            <div class="ecocash-step-text">Send the <strong>ZWG amount</strong> shown on your selected plan above</div>
+          </div>
+          <div class="ecocash-step">
+            <div class="ecocash-step-num">4</div>
+            <div class="ecocash-step-text">Copy your <strong>Transaction Reference</strong> from the SMS and paste it below</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Selected plan summary -->
+      <div class="selected-plan-summary" id="plan-summary" style="display:none">
+        <div>
+          <div class="sps-label">Selected Plan</div>
+          <div class="sps-value" id="summary-plan-name">—</div>
+        </div>
+        <div>
+          <div class="sps-label">Amount (USD)</div>
+          <div class="sps-value" id="summary-usd">—</div>
+        </div>
+        <div>
+          <div class="sps-label">Amount (ZWG)</div>
+          <div class="sps-value" id="summary-zwg">—</div>
+        </div>
+        <div>
+          <div class="sps-label">Duration</div>
+          <div class="sps-value">30 days</div>
+        </div>
+      </div>
+
+      <!-- Submission form -->
+      <form id="payment-form" onsubmit="submitOrder(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Transaction Reference *</label>
+            <input class="form-input ecocash-input" id="tx-ref" placeholder="e.g. ECO12345678" required />
+            <div class="form-hint">From the EcoCash SMS confirmation</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Your EcoCash Number</label>
+            <input class="form-input ecocash-input" id="tx-phone" placeholder="e.g. 0786831091" />
+            <div class="form-hint">Optional — helps admin verify faster</div>
+          </div>
+        </div>
+        <button class="btn-submit" id="submit-btn" type="submit" disabled>
+          <span>📤</span> Submit Payment Proof
+        </button>
+        <div id="no-plan-warn" style="font-size:12px;color:var(--gold);font-family:var(--mono);margin-top:8px;text-align:center;">
+          ← Select a plan above first
+        </div>
+      </form>
+    </div>
+
+    <!-- My Orders -->
+    <div class="payment-section">
+      <div class="section-title">📋 My Orders</div>
+      <div id="my-orders-container">
+        <div class="empty-state">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Admin: All Orders -->
+    <div class="admin-orders-section" id="admin-orders-section">
+      <div class="section-title" style="justify-content:space-between">
+        <span>🛡️ Admin — All Orders</span>
+        <button onclick="loadAdminOrders()" style="background:var(--panel2);border:1px solid var(--border);color:var(--text-dim);border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;">↻ Refresh</button>
+      </div>
+      <div id="admin-orders-container">
+        <div class="empty-state">Loading…</div>
+      </div>
+    </div>
+
+    <footer style="margin-top:32px;text-align:center;font-size:11px;color:var(--text-muted);font-family:var(--mono);">
+      NOVASPARK V8 &nbsp;•&nbsp; Powered by <a href="https://render.com" target="_blank" style="color:var(--accent2);text-decoration:none;">Render.com</a><br>
+      © 2026 NOVASPARK V8 | <a href="/terms.html" style="color:var(--accent2);text-decoration:none;">Terms</a>
+    </footer>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const token = localStorage.getItem('ns_token');
+if (!token) location.href = '/login.html';
+
+let selectedPlan = null;
+let plansData = {};
+let isAdmin = false;
+
+function authHeaders() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }; }
+
+function toast(msg, type = 'ok') {
+  const t = document.getElementById('toast');
+  const d = document.createElement('div');
+  d.className = 'toast-msg ' + type;
+  d.textContent = msg;
+  t.appendChild(d);
+  setTimeout(() => d.remove(), 4000);
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Load user info ───────────────────────────────────────────────────────────
+async function loadMe() {
+  try {
+    const r = await fetch('/api/auth/me', { headers: authHeaders() });
+    if (!r.ok) { localStorage.removeItem('ns_token'); location.href = '/login.html'; return; }
+    const user = await r.json();
+    document.getElementById('user-name-sidebar').textContent = user.username;
+    document.getElementById('user-plan-sidebar').textContent = (user.plan || 'free').toUpperCase();
+    document.getElementById('user-avatar-sidebar').textContent = user.username[0].toUpperCase();
+    isAdmin = user.role === 'admin';
+    if (isAdmin) document.getElementById('admin-orders-section').style.display = 'block';
+  } catch(e) {}
+}
+
+// ── Load plans ──────────────────────────────────────────────────────────────
+async function loadPlans() {
+  try {
+    const r = await fetch('/api/bank/plans');
+    const d = await r.json();
+    plansData = d.plans;
+    const ecNum = d.ecocash;
+    document.getElementById('ecocash-number').textContent = ecNum;
+    document.getElementById('ecocash-inline').textContent = ecNum;
+
+    const grid = document.getElementById('plans-grid');
+    const planOrder = ['basic', 'pro', 'vip'];
+    const badges = { basic: '', pro: '<span class="plan-badge popular">POPULAR</span>', vip: '<span class="plan-badge best">BEST VALUE</span>' };
+    const icons  = { basic: '💵', pro: '🚀', vip: '👑' };
+
+    grid.innerHTML = planOrder.map(key => {
+      const p = plansData[key];
+      const isVip = key === 'vip';
+      return `<div class="plan-card ${isVip ? 'vip-card' : ''}" id="plan-card-${key}" onclick="selectPlan('${key}')">
+        ${badges[key]}
+        <div class="plan-icon">${icons[key]}</div>
+        <div class="plan-name">${p.name} Plan</div>
+        <div class="plan-price ${isVip ? 'vip-price' : ''}">$${p.price_usd}<span>/mo</span></div>
+        <div class="plan-zwg">ZWG ${p.price_zwg.toLocaleString()}</div>
+        <ul class="plan-features">
+          <li>${p.maxBots} bot${p.maxBots>1?'s':''} max</li>
+          <li>${p.durationDays} day access</li>
+          ${isVip ? '<li>VIP server tier</li>' : ''}
+          <li>Admin activation</li>
+        </ul>
+        <div class="plan-select-indicator">✓ Selected</div>
+      </div>`;
+    }).join('');
+  } catch(e) { toast('Failed to load plans', 'error'); }
+}
+
+// ── Select plan ─────────────────────────────────────────────────────────────
+function selectPlan(key) {
+  selectedPlan = key;
+  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('plan-card-' + key).classList.add('selected');
+
+  const p = plansData[key];
+  document.getElementById('plan-summary').style.display = 'flex';
+  document.getElementById('summary-plan-name').textContent = p.name;
+  document.getElementById('summary-plan-name').className = 'sps-value' + (key==='vip'?' vip':'');
+  document.getElementById('summary-usd').textContent = '$' + p.price_usd;
+  document.getElementById('summary-zwg').textContent = 'ZWG ' + p.price_zwg.toLocaleString();
+
+  document.getElementById('submit-btn').disabled = false;
+  document.getElementById('no-plan-warn').style.display = 'none';
+}
+
+// ── Submit order ─────────────────────────────────────────────────────────────
+async function submitOrder(e) {
+  e.preventDefault();
+  if (!selectedPlan) { toast('Please select a plan first', 'warn'); return; }
+  const txRef = document.getElementById('tx-ref').value.trim();
+  const phone = document.getElementById('tx-phone').value.trim();
+  if (!txRef) { toast('Transaction reference is required', 'error'); return; }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.innerHTML = '<span>⏳</span> Submitting…';
+
+  try {
+    const r = await fetch('/api/bank/order', {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ plan: selectedPlan, txRef, phone })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      toast('✅ Order submitted! Admin will activate within 24h.', 'ok');
+      document.getElementById('payment-form').reset();
+      selectedPlan = null;
+      document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+      document.getElementById('plan-summary').style.display = 'none';
+      document.getElementById('submit-btn').disabled = true;
+      document.getElementById('no-plan-warn').style.display = 'block';
+      loadMyOrders();
+    } else {
+      toast(d.error || 'Submission failed', 'error');
+    }
+  } catch(err) { toast('Error: ' + err.message, 'error'); }
+  finally { btn.disabled = false; btn.innerHTML = '<span>📤</span> Submit Payment Proof'; }
+}
+
+// ── My orders ────────────────────────────────────────────────────────────────
+async function loadMyOrders() {
+  const container = document.getElementById('my-orders-container');
+  try {
+    const r = await fetch('/api/bank/orders', { headers: authHeaders() });
+    const orders = await r.json();
+    if (!orders.length) { container.innerHTML = '<div class="empty-state">No orders yet — buy a plan above.</div>'; return; }
+    container.innerHTML = `<div style="overflow-x:auto"><table class="orders-table">
+      <thead><tr>
+        <th>Plan</th><th>Amount</th><th>Tx Ref</th><th>Status</th><th>Submitted</th><th>Note</th>
+      </tr></thead>
+      <tbody>
+        ${orders.map(o => `<tr>
+          <td><strong>${escHtml(o.planName)}</strong></td>
+          <td style="font-family:var(--mono);font-size:11px">$${o.price_usd} / ZWG ${o.price_zwg}</td>
+          <td style="font-family:var(--mono);font-size:11px;color:var(--accent)">${escHtml(o.txRef)}</td>
+          <td><span class="status-badge ${o.status}">${o.status}</span></td>
+          <td style="font-size:11px;color:var(--text-dim)">${new Date(o.submittedAt).toLocaleDateString()}</td>
+          <td style="font-size:11px;color:var(--text-muted)">${escHtml(o.note || '—')}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>`;
+  } catch(e) { container.innerHTML = '<div class="empty-state">Failed to load orders.</div>'; }
+}
+
+// ── Admin: all orders ─────────────────────────────────────────────────────────
+async function loadAdminOrders() {
+  if (!isAdmin) return;
+  const container = document.getElementById('admin-orders-container');
+  container.innerHTML = '<div class="empty-state">Loading…</div>';
+  try {
+    const r = await fetch('/api/bank/orders/all', { headers: authHeaders() });
+    const orders = await r.json();
+    if (!orders.length) { container.innerHTML = '<div class="empty-state">No orders yet.</div>'; return; }
+    container.innerHTML = `<div style="overflow-x:auto"><table class="orders-table">
+      <thead><tr>
+        <th>User</th><th>Plan</th><th>Amount</th><th>Tx Ref</th><th>Phone</th><th>Status</th><th>Submitted</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+        ${orders.map(o => `<tr id="admin-row-${o.id}">
+          <td style="font-weight:600">${escHtml(o.username)}</td>
+          <td>${escHtml(o.planName)}</td>
+          <td style="font-family:var(--mono);font-size:11px">$${o.price_usd} / ZWG ${o.price_zwg}</td>
+          <td style="font-family:var(--mono);font-size:11px;color:var(--accent)">${escHtml(o.txRef)}</td>
+          <td style="font-size:11px;color:var(--text-dim)">${escHtml(o.phone || '—')}</td>
+          <td><span class="status-badge ${o.status}">${o.status}</span></td>
+          <td style="font-size:11px;color:var(--text-dim)">${new Date(o.submittedAt).toLocaleDateString()}</td>
+          <td>
+            ${o.status === 'pending' ? `
+            <div class="admin-actions">
+              <button class="btn-sm btn-approve" onclick="adminApprove('${o.id}')">✓ Approve</button>
+              <button class="btn-sm btn-reject" onclick="adminReject('${o.id}')">✗ Reject</button>
+            </div>` : `<span style="font-size:11px;color:var(--text-muted)">${escHtml(o.reviewedBy || '—')}</span>`}
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>`;
+  } catch(e) { container.innerHTML = '<div class="empty-state">Failed to load admin orders.</div>'; }
+}
+
+async function adminApprove(id) {
+  if (!confirm('Approve this order and activate the user plan?')) return;
+  try {
+    const r = await fetch('/api/bank/orders/' + id + '/approve', { method: 'POST', headers: authHeaders() });
+    const d = await r.json();
+    if (d.ok) { toast('✅ Plan activated for user!', 'ok'); loadAdminOrders(); }
+    else toast(d.error || 'Failed', 'error');
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+async function adminReject(id) {
+  const reason = prompt('Rejection reason (shown to user):') || '';
+  try {
+    const r = await fetch('/api/bank/orders/' + id + '/reject', {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ reason })
+    });
+    const d = await r.json();
+    if (d.ok) { toast('Order rejected.', 'warn'); loadAdminOrders(); }
+    else toast(d.error || 'Failed', 'error');
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+(async () => {
+  await loadMe();
+  await loadPlans();
+  await loadMyOrders();
+  if (isAdmin) await loadAdminOrders();
+})();
+</script>
+</body>
+</html>
