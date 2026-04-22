@@ -2137,7 +2137,7 @@ app.get('/api/status', (req, res) => {
     pingCount: state.pingCount,
     cleanCount: state.cleanCount,
     mem,
-    version: '6.0.0'
+    version: '7.0.0'
   });
 });
 
@@ -2167,7 +2167,7 @@ app.get('/api/stats', requireAuth, async (req, res) => {
     const uptimeSecs = Math.floor((Date.now() - state.startTime) / 1000);
 
     res.json({
-      version: '6.0.0',
+      version: '7.0.0',
       uptime: uptimeSecs,
       activeBots,
       totalUsers,
@@ -2188,7 +2188,7 @@ app.get('/api/stats', requireAuth, async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 app.get('/api/bot-features', (req, res) => {
   res.json({
-    version: '6.0.0',
+    version: '7.0.0',
     botName: 'NovaSpark Bot',
     categories: [
       {
@@ -2732,7 +2732,7 @@ wss.on('connection', async (ws) => {
       pingCount: state.pingCount,
       cleanCount: state.cleanCount,
       mem: process.memoryUsage(),
-      version: '6.0.0'
+      version: '7.0.0'
     }
   }));
 

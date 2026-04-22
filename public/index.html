@@ -688,7 +688,62 @@
         </div>
         <div class="admin-panel">
           <div class="admin-panel-title">Users & Plans</div>
+          <div style="margin-bottom:10px">
+            <input type="text" class="form-input" id="user-search-input" placeholder="🔍 Search by username or referral code…" oninput="searchUsers()" style="width:100%;box-sizing:border-box" />
+          </div>
           <div id="users-table-container">Loading...</div>
+        </div>
+
+        <div class="admin-panel">
+          <div class="admin-panel-title">📡 Broadcast Notification</div>
+          <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end">
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Message</label>
+              <input type="text" class="form-input" id="broadcast-msg" placeholder="Message to send to all users…" />
+            </div>
+            <button class="btn btn-primary" style="height:40px" onclick="sendBroadcast()">Send All</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;margin-top:8px">
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Target Username (leave blank = all)</label>
+              <input type="text" class="form-input" id="broadcast-target" placeholder="username (optional)" />
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-panel">
+          <div class="admin-panel-title">📊 Bot Metrics</div>
+          <div id="bot-metrics-container" style="font-family:var(--mono);font-size:12px;color:var(--text-dim)">
+            <button class="btn btn-primary" onclick="loadBotMetrics()">Load Metrics</button>
+          </div>
+        </div>
+
+        <div class="admin-panel">
+          <div class="admin-panel-title">📋 Server Log Viewer</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin-bottom:8px">
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Level (info/warn/error)</label>
+              <input type="text" class="form-input" id="log-level-filter" placeholder="info" />
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Session ID (optional)</label>
+              <input type="text" class="form-input" id="log-session-filter" placeholder="session id…" />
+            </div>
+            <button class="btn btn-primary" style="height:40px" onclick="loadAdminLogs()">Load</button>
+          </div>
+          <div id="admin-log-container" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;max-height:160px;overflow-y:auto;font-family:var(--mono);font-size:11px;color:var(--text-dim)">Logs will appear here…</div>
+        </div>
+
+        <div class="admin-panel">
+          <div class="admin-panel-title">⬇️ Install Bot Script from GitHub</div>
+          <p style="color:var(--text-dim);font-size:12px;margin:0 0 10px 0">Clones / pulls the latest NovaSpark-Bot from GitHub and runs <code>npm install</code> into <code>bot-src/</code>.</p>
+          <button class="btn btn-primary" onclick="installBotFromModal()">Install / Update Bot</button>
+        </div>
+
+        <div class="admin-panel" style="border-color:var(--red-b,#ff445533)">
+          <div class="admin-panel-title" style="color:var(--red,#ff4455)">🛑 Emergency — Stop All Bots</div>
+          <p style="color:var(--text-dim);font-size:12px;margin:0 0 10px 0">Kills every running bot process immediately. Use with caution.</p>
+          <button class="btn btn-danger" onclick="emergencyStopAll()">STOP ALL BOTS</button>
         </div>
       </div>
       <div class="modal-footer">
@@ -1044,6 +1099,106 @@ async function installBot() {
   } catch (err) { toast('Error: ' + err.message, 'error'); }
 }
 
+// Install bot triggered from inside the Admin Modal
+async function installBotFromModal() {
+  if (!confirm('This will clone / pull NovaSpark-Bot from GitHub and run npm install. Continue?')) return;
+  toast('Installing bot from GitHub…', 'ok');
+  try {
+    const r = await fetch('/api/install-bot', { method:'POST', headers: authHeaders() });
+    const d = await r.json();
+    if (d.ok) toast('Bot installed successfully!', 'ok');
+    else toast(d.error || 'Failed to install', 'error');
+  } catch (err) { toast('Error: ' + err.message, 'error'); }
+}
+
+// ── v7: Broadcast notification ───────────────────────────────────────────────
+async function sendBroadcast() {
+  const message = document.getElementById('broadcast-msg').value.trim();
+  const target  = document.getElementById('broadcast-target').value.trim();
+  if (!message) { toast('Message is required', 'error'); return; }
+  try {
+    const body = target ? { message, username: target } : { message };
+    const r = await fetch('/api/admin/broadcast', { method:'POST', headers: authHeaders(), body: JSON.stringify(body) });
+    const d = await r.json();
+    if (d.ok) { toast('Broadcast sent!', 'ok'); document.getElementById('broadcast-msg').value = ''; document.getElementById('broadcast-target').value = ''; }
+    else toast(d.error || 'Failed to broadcast', 'error');
+  } catch (err) { toast('Error: ' + err.message, 'error'); }
+}
+
+// ── v7: User search ──────────────────────────────────────────────────────────
+let _searchTimer = null;
+async function searchUsers() {
+  clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(async () => {
+    const q = document.getElementById('user-search-input').value.trim();
+    if (!q) { loadUsersTable(); return; }
+    const container = document.getElementById('users-table-container');
+    try {
+      const r = await fetch('/api/users/search?q=' + encodeURIComponent(q), { headers: authHeaders() });
+      const users = await r.json();
+      if (!users.length) { container.innerHTML = '<p style="color:var(--text-dim);font-family:var(--mono);font-size:12px">No users found.</p>'; return; }
+      const PLAN_COLOR = { free: 'var(--blue)', basic: 'var(--gold)', pro: 'var(--purple)' };
+      container.innerHTML = '<table class="users-table"><thead><tr><th>Username</th><th>Role</th><th>Plan</th><th>Referrals</th><th>Set Plan</th><th>Action</th></tr></thead><tbody>' +
+        users.map(u => '<tr data-uid="' + u.id + '">' +
+          '<td style="color:var(--text)">' + escHtml(u.username) + (u.hasVIPAccess ? ' <span style="color:var(--gold)">VIP</span>' : '') + '</td>' +
+          '<td><span style="color:' + (u.role==='admin'?'var(--gold)':'var(--blue)') + '">' + u.role + '</span></td>' +
+          '<td style="color:' + (PLAN_COLOR[u.plan] || 'var(--blue)') + ';font-weight:700">' + ((u.plan || 'free').toUpperCase()) + '</td>' +
+          '<td style="color:var(--purple)">' + (u.referralCount || 0) + '</td>' +
+          '<td>' + (u.role !== 'admin' ? '<div class="add-coin-row"><select id="plan-sel-' + u.id + '" style="background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:11px"><option value="free"' + (u.plan==='free'?' selected':'') + '>Free</option><option value="basic"' + (u.plan==='basic'?' selected':'') + '>Basic $5</option><option value="pro"' + (u.plan==='pro'?' selected':'') + '>Pro $10</option></select><button class="btn btn-add" style="padding:6px 10px;font-size:11px" onclick="setUserPlan(&apos;' + u.id + '&apos;)">Set</button></div>' : '&mdash;') + '</td>' +
+          '<td>' + (u.role !== 'admin' ? '<button class="btn btn-danger" style="padding:6px 10px;font-size:11px" onclick="deleteUser(&apos;' + u.id + '&apos;, &apos;' + escHtml(u.username) + '&apos;)">Delete</button>' : '&mdash;') + '</td>' +
+        '</tr>').join('') + '</tbody></table>';
+    } catch (err) { container.innerHTML = '<p style="color:var(--red);font-family:var(--mono);font-size:12px">Error: ' + err.message + '</p>'; }
+  }, 350);
+}
+
+// ── v7: Bot metrics ──────────────────────────────────────────────────────────
+async function loadBotMetrics() {
+  const container = document.getElementById('bot-metrics-container');
+  container.innerHTML = '<span style="color:var(--text-dim)">Loading…</span>';
+  try {
+    const r = await fetch('/api/admin/bot-metrics', { headers: authHeaders() });
+    const d = await r.json();
+    container.innerHTML =
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px">' +
+        '<div style="background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center"><div style="font-size:22px;font-weight:700;color:var(--blue)">' + (d.runningBots ?? '—') + '</div><div style="font-size:10px;color:var(--text-dim)">Running Bots</div></div>' +
+        '<div style="background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center"><div style="font-size:22px;font-weight:700;color:var(--purple)">' + (d.uptimeSeconds != null ? Math.floor(d.uptimeSeconds/60) + 'm' : '—') + '</div><div style="font-size:10px;color:var(--text-dim)">Uptime</div></div>' +
+        '<div style="background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center"><div style="font-size:22px;font-weight:700;color:var(--gold)">' + (d.pingCount ?? '—') + '</div><div style="font-size:10px;color:var(--text-dim)">Pings</div></div>' +
+      '</div>';
+  } catch (err) { container.innerHTML = '<span style="color:var(--red)">Error: ' + err.message + '</span>'; }
+}
+
+// ── v7: Admin log viewer ─────────────────────────────────────────────────────
+async function loadAdminLogs() {
+  const level     = document.getElementById('log-level-filter').value.trim();
+  const sessionId = document.getElementById('log-session-filter').value.trim();
+  const container = document.getElementById('admin-log-container');
+  container.innerHTML = 'Loading…';
+  try {
+    let url = '/api/admin/logs';
+    const params = [];
+    if (level)     params.push('level=' + encodeURIComponent(level));
+    if (sessionId) params.push('sessionId=' + encodeURIComponent(sessionId));
+    if (params.length) url += '?' + params.join('&');
+    const r = await fetch(url, { headers: authHeaders() });
+    const d = await r.json();
+    const logs = Array.isArray(d) ? d : (d.logs || []);
+    if (!logs.length) { container.innerHTML = '<span style="color:var(--text-dim)">No logs found.</span>'; return; }
+    container.innerHTML = logs.map(l => '<div>' + escHtml(typeof l === 'string' ? l : JSON.stringify(l)) + '</div>').join('');
+    container.scrollTop = container.scrollHeight;
+  } catch (err) { container.innerHTML = '<span style="color:var(--red)">Error: ' + err.message + '</span>'; }
+}
+
+// ── v7: Emergency stop all bots ──────────────────────────────────────────────
+async function emergencyStopAll() {
+  if (!confirm('⚠️ This will IMMEDIATELY kill every running bot. Are you sure?')) return;
+  try {
+    const r = await fetch('/api/admin/stop-all', { method:'POST', headers: authHeaders() });
+    const d = await r.json();
+    if (d.ok) toast('All bots stopped!', 'ok');
+    else toast(d.error || 'Failed', 'error');
+  } catch (err) { toast('Error: ' + err.message, 'error'); }
+}
+
 // Plan / Upgrade Actions
 function openUpgradeModal() {
   updatePlanUI(currentUser.plan || 'free');
@@ -1136,6 +1291,10 @@ function openAdminPanel() {
   document.getElementById('admin-modal-overlay').classList.add('active');
   loadUsersTable();
   loadRedemptionCodes();
+  loadBotMetrics();
+  // reset search box each open
+  const si = document.getElementById('user-search-input');
+  if (si) si.value = '';
 }
 
 function closeAdminModal() { document.getElementById('admin-modal-overlay').classList.remove('active'); }
