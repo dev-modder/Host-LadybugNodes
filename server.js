@@ -357,7 +357,7 @@ function ensureAdminExists() {
   }
 }
 
-ensureAdminExists();
+// ensureAdminExists() deferred to start() — called after MongoDB connection
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SERVER STATE
@@ -831,7 +831,7 @@ app.get('/api/plans/me', requireAuth, async (req, res) => {
       existingCount = await Session.countDocuments({ ownerId: req.user.id });
     } else {
       const sessions = loadSessions();
-      existingCount = sessions.filter(s => s.ownerId === req.user.id).length;
+      existingCount = sessions.filter(s => String(s.ownerId) === req.user.id).length;
     }
     return res.json({ plan, ...planInfo, usedBots: existingCount });
   } catch (err) {
@@ -1333,6 +1333,110 @@ app.delete('/api/users/:id', requireAdmin, async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // SESSION ROUTES
 // ─────────────────────────────────────────────────────────────────────────────
+// ── NEW v7: GET single session by ID ──────────────────────────────────────────
+app.get('/api/sessions/:id', requireAuth, async (req, res) => {
+  try {
+    let sess;
+    if (useMongoDB) {
+      sess = await Session.findById(req.params.id);
+      if (sess) sess = { ...sess.toObject(), id: sess._id.toString() };
+    } else {
+      const sessions = loadSessions();
+      sess = sessions.find(s => s.id === req.params.id);
+    }
+    if (!sess) return res.status(404).json({ error: 'Session not found' });
+    if (req.user.role !== 'admin' && String(sess.ownerId) !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    return res.json(sess);
+  } catch (err) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── NEW v7: RESTful session action routes ─────────────────────────────────────
+async function getSessionForAction(id, userId, isAdmin) {
+  let sess;
+  if (useMongoDB) {
+    sess = await Session.findById(id);
+    if (sess) sess = { ...sess.toObject(), id: sess._id.toString() };
+  } else {
+    const sessions = loadSessions();
+    sess = sessions.find(s => s.id === id);
+  }
+  if (!sess) return { error: 'Session not found', status: 404 };
+  if (!isAdmin && String(sess.ownerId) !== userId) return { error: 'Forbidden', status: 403 };
+  return { sess };
+}
+
+app.post('/api/sessions/:id/start', requireAuth, async (req, res) => {
+  try {
+    const { sess, error, status } = await getSessionForAction(req.params.id, req.user.id, req.user.role === 'admin');
+    if (error) return res.status(status).json({ error });
+    startBotProcess(sess);
+    logActivity(req.user.id, req.user.username, 'session_start', { sessionId: sess.id });
+    pushNotification(sess.ownerId, 'Bot Started', `Session "${sess.ownerName || sess.id}" is starting.`, '🚀');
+    return res.json({ ok: true });
+  } catch (err) {
+    log('Session start error: ' + err.message, 'error');
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/sessions/:id/stop', requireAuth, async (req, res) => {
+  try {
+    const { sess, error, status } = await getSessionForAction(req.params.id, req.user.id, req.user.role === 'admin');
+    if (error) return res.status(status).json({ error });
+    stopBotProcess(sess.id);
+    logActivity(req.user.id, req.user.username, 'session_stop', { sessionId: sess.id });
+    pushNotification(sess.ownerId, 'Bot Stopped', `Session "${sess.ownerName || sess.id}" was stopped.`, '⛔');
+    return res.json({ ok: true });
+  } catch (err) {
+    log('Session stop error: ' + err.message, 'error');
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/sessions/:id/restart', requireAuth, async (req, res) => {
+  try {
+    const { sess, error, status } = await getSessionForAction(req.params.id, req.user.id, req.user.role === 'admin');
+    if (error) return res.status(status).json({ error });
+    stopBotProcess(sess.id);
+    setTimeout(() => startBotProcess(sess), 1500);
+    logActivity(req.user.id, req.user.username, 'session_restart', { sessionId: sess.id });
+    pushNotification(sess.ownerId, 'Bot Restarting', `Session "${sess.ownerName || sess.id}" is restarting.`, '🔄');
+    return res.json({ ok: true });
+  } catch (err) {
+    log('Session restart error: ' + err.message, 'error');
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET logs for a specific session
+app.get('/api/sessions/:id/logs', requireAuth, async (req, res) => {
+  try {
+    const { sess, error, status } = await getSessionForAction(req.params.id, req.user.id, req.user.role === 'admin');
+    if (error) return res.status(status).json({ error });
+
+    const sessionId = sess.id;
+    let sessionLogs = logBuffer.filter(e => e.sessionId === sessionId);
+
+    // Non-admin users: only last LOG_VIEWING_MINUTES minutes of logs
+    if (req.user.role !== 'admin') {
+      const cutoff = Date.now() - LOG_VIEWING_MINUTES * 60 * 1000;
+      const startTime = sess.startTime ? new Date(sess.startTime).getTime() : 0;
+      const limitFrom = Math.max(cutoff, startTime);
+      sessionLogs = sessionLogs.filter(e => e.ts >= limitFrom);
+    }
+
+    return res.json({ sessionId, logs: sessionLogs });
+  } catch (err) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── END new v7 session sub-routes ─────────────────────────────────────────────
+
 app.get('/api/sessions', requireAuth, async (req, res) => {
   try {
     if (useMongoDB) {
@@ -1343,7 +1447,7 @@ app.get('/api/sessions', requireAuth, async (req, res) => {
     } else {
       const sessions = loadSessions();
       if (req.user.role === 'admin') return res.json(sessions);
-      return res.json(sessions.filter(s => s.ownerId === req.user.id));
+      return res.json(sessions.filter(s => String(s.ownerId) === req.user.id));
     }
   } catch {
     return res.json([]);
@@ -1372,7 +1476,7 @@ app.post('/api/sessions', requireAuth, async (req, res) => {
         existingCount = await Session.countDocuments({ ownerId: req.user.id });
       } else {
         const sessions = loadSessions();
-        existingCount = sessions.filter(s => s.ownerId === req.user.id).length;
+        existingCount = sessions.filter(s => String(s.ownerId) === req.user.id).length;
       }
       if (existingCount >= planInfo.maxBots) {
         return res.status(402).json({
@@ -1425,7 +1529,7 @@ app.put('/api/sessions/:id', requireAuth, async (req, res) => {
     if (useMongoDB) {
       const session = await Session.findById(req.params.id);
       if (!session) return res.status(404).json({ error: 'Session not found' });
-      if (req.user.role !== 'admin' && session.ownerId !== req.user.id) {
+      if (req.user.role !== 'admin' && String(session.ownerId) !== req.user.id) {
         return res.status(403).json({ error: 'Forbidden' });
       }
       
@@ -1460,7 +1564,7 @@ app.delete('/api/sessions/:id', requireAuth, async (req, res) => {
     if (useMongoDB) {
       const session = await Session.findById(req.params.id);
       if (!session) return res.status(404).json({ error: 'Session not found' });
-      if (req.user.role !== 'admin' && session.ownerId !== req.user.id) {
+      if (req.user.role !== 'admin' && String(session.ownerId) !== req.user.id) {
         return res.status(403).json({ error: 'Forbidden' });
       }
       
@@ -1482,7 +1586,7 @@ app.delete('/api/sessions/:id', requireAuth, async (req, res) => {
       let sessions = loadSessions();
       const sess = sessions.find(s => s.id === req.params.id);
       if (!sess) return res.status(404).json({ error: 'Session not found' });
-      if (req.user.role !== 'admin' && sess.ownerId !== req.user.id) {
+      if (req.user.role !== 'admin' && String(sess.ownerId) !== req.user.id) {
         return res.status(403).json({ error: 'Forbidden' });
       }
       
@@ -1523,7 +1627,7 @@ app.get('/api/deleted-bots', requireAuth, async (req, res) => {
     } else {
       const bots = loadDeletedBots();
       if (req.user.role === 'admin') return res.json(bots);
-      return res.json(bots.filter(b => b.ownerId === req.user.id));
+      return res.json(bots.filter(b => String(b.ownerId) === req.user.id));
     }
   } catch {
     return res.json([]);
@@ -1535,7 +1639,7 @@ app.post('/api/deleted-bots/:id/recover', requireAuth, async (req, res) => {
     if (useMongoDB) {
       const deletedBot = await DeletedBot.findById(req.params.id);
       if (!deletedBot) return res.status(404).json({ error: 'Deleted bot not found' });
-      if (req.user.role !== 'admin' && deletedBot.ownerId !== req.user.id) {
+      if (req.user.role !== 'admin' && String(deletedBot.ownerId) !== req.user.id) {
         return res.status(403).json({ error: 'Forbidden' });
       }
       
@@ -1559,7 +1663,7 @@ app.post('/api/deleted-bots/:id/recover', requireAuth, async (req, res) => {
       const idx = deletedBots.findIndex(b => b.id === req.params.id);
       if (idx === -1) return res.status(404).json({ error: 'Deleted bot not found' });
       const deletedBot = deletedBots[idx];
-      if (req.user.role !== 'admin' && deletedBot.ownerId !== req.user.id) {
+      if (req.user.role !== 'admin' && String(deletedBot.ownerId) !== req.user.id) {
         return res.status(403).json({ error: 'Forbidden' });
       }
       
@@ -1614,7 +1718,7 @@ app.get('/api/panel-bots', requireAuth, async (req, res) => {
     } else {
       const configs = loadBotConfigs();
       if (req.user.role === 'admin') return res.json(configs);
-      return res.json(configs.filter(c => c.ownerId === req.user.id));
+      return res.json(configs.filter(c => String(c.ownerId) === req.user.id));
     }
   } catch {
     return res.json([]);
@@ -1626,7 +1730,7 @@ app.get('/api/panel-bots/:botId', requireAuth, async (req, res) => {
     if (useMongoDB) {
       const config = await BotConfig.findById(req.params.botId);
       if (!config) return res.status(404).json({ error: 'Bot not found' });
-      if (req.user.role !== 'admin' && config.ownerId !== req.user.id) {
+      if (req.user.role !== 'admin' && String(config.ownerId) !== req.user.id) {
         return res.status(403).json({ error: 'Forbidden' });
       }
       return res.json(config);
@@ -1634,7 +1738,7 @@ app.get('/api/panel-bots/:botId', requireAuth, async (req, res) => {
       const configs = loadBotConfigs();
       const config = configs.find(c => c.id === req.params.botId);
       if (!config) return res.status(404).json({ error: 'Bot not found' });
-      if (req.user.role !== 'admin' && config.ownerId !== req.user.id) {
+      if (req.user.role !== 'admin' && String(config.ownerId) !== req.user.id) {
         return res.status(403).json({ error: 'Forbidden' });
       }
       return res.json(config);
@@ -1711,7 +1815,7 @@ app.put('/api/panel-bots/:botId', requireAuth, async (req, res) => {
     if (useMongoDB) {
       const config = await BotConfig.findById(req.params.botId);
       if (!config) return res.status(404).json({ error: 'Bot not found' });
-      if (req.user.role !== 'admin' && config.ownerId !== req.user.id) {
+      if (req.user.role !== 'admin' && String(config.ownerId) !== req.user.id) {
         return res.status(403).json({ error: 'Forbidden' });
       }
       
@@ -1746,7 +1850,7 @@ app.delete('/api/panel-bots/:botId', requireAuth, async (req, res) => {
     if (useMongoDB) {
       const config = await BotConfig.findById(req.params.botId);
       if (!config) return res.status(404).json({ error: 'Bot not found' });
-      if (req.user.role !== 'admin' && config.ownerId !== req.user.id) {
+      if (req.user.role !== 'admin' && String(config.ownerId) !== req.user.id) {
         return res.status(403).json({ error: 'Forbidden' });
       }
       
@@ -1770,7 +1874,7 @@ app.delete('/api/panel-bots/:botId', requireAuth, async (req, res) => {
       const configs = loadBotConfigs();
       const config = configs.find(c => c.id === req.params.botId);
       if (!config) return res.status(404).json({ error: 'Bot not found' });
-      if (req.user.role !== 'admin' && config.ownerId !== req.user.id) {
+      if (req.user.role !== 'admin' && String(config.ownerId) !== req.user.id) {
         return res.status(403).json({ error: 'Forbidden' });
       }
       
@@ -1817,7 +1921,7 @@ app.post('/api/panel-bots/:botId/start', requireAuth, async (req, res) => {
     }
     
     if (!config) return res.status(404).json({ error: 'Bot not found' });
-    if (req.user.role !== 'admin' && config.ownerId !== req.user.id) {
+    if (req.user.role !== 'admin' && String(config.ownerId) !== req.user.id) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -1842,7 +1946,7 @@ app.post('/api/panel-bots/:botId/stop', requireAuth, async (req, res) => {
     }
     
     if (!config) return res.status(404).json({ error: 'Bot not found' });
-    if (req.user.role !== 'admin' && config.ownerId !== req.user.id) {
+    if (req.user.role !== 'admin' && String(config.ownerId) !== req.user.id) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -1864,7 +1968,7 @@ app.post('/api/panel-bots/:botId/restart', requireAuth, async (req, res) => {
     }
     
     if (!config) return res.status(404).json({ error: 'Bot not found' });
-    if (req.user.role !== 'admin' && config.ownerId !== req.user.id) {
+    if (req.user.role !== 'admin' && String(config.ownerId) !== req.user.id) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -1888,7 +1992,7 @@ app.get('/api/panel-bots/:botId/logs', requireAuth, async (req, res) => {
     }
     
     if (!config) return res.status(404).json({ error: 'Bot not found' });
-    if (req.user.role !== 'admin' && config.ownerId !== req.user.id) {
+    if (req.user.role !== 'admin' && String(config.ownerId) !== req.user.id) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -1932,7 +2036,7 @@ app.post('/api/bot/start', requireAuth, async (req, res) => {
     }
     
     if (!sess) return res.status(404).json({ error: 'Session not found' });
-    if (req.user.role !== 'admin' && sess.ownerId !== req.user.id) {
+    if (req.user.role !== 'admin' && String(sess.ownerId) !== req.user.id) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -1947,49 +2051,55 @@ app.post('/api/bot/start', requireAuth, async (req, res) => {
 
 app.post('/api/bot/stop', requireAuth, async (req, res) => {
   const { sessionId } = req.body || {};
-  
+  if (!sessionId) return res.status(400).json({ error: 'sessionId required' });
+
   try {
     let sess;
     if (useMongoDB) {
       sess = await Session.findById(sessionId);
+      if (sess) sess = { ...sess.toObject(), id: sess._id.toString() };
     } else {
       const sessions = loadSessions();
       sess = sessions.find(s => s.id === sessionId);
     }
-    
+
     if (!sess) return res.status(404).json({ error: 'Session not found' });
-    if (req.user.role !== 'admin' && sess.ownerId !== req.user.id) {
+    if (req.user.role !== 'admin' && String(sess.ownerId) !== req.user.id) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    stopBotProcess(sessionId);
+    stopBotProcess(sess.id || sessionId);
     return res.json({ ok: true });
-  } catch {
+  } catch (err) {
+    log('Bot stop error: ' + err.message, 'error');
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 app.post('/api/bot/restart', requireAuth, async (req, res) => {
   const { sessionId } = req.body || {};
-  
+  if (!sessionId) return res.status(400).json({ error: 'sessionId required' });
+
   try {
     let sess;
     if (useMongoDB) {
       sess = await Session.findById(sessionId);
+      if (sess) sess = { ...sess.toObject(), id: sess._id.toString() };
     } else {
       const sessions = loadSessions();
       sess = sessions.find(s => s.id === sessionId);
     }
-    
+
     if (!sess) return res.status(404).json({ error: 'Session not found' });
-    if (req.user.role !== 'admin' && sess.ownerId !== req.user.id) {
+    if (req.user.role !== 'admin' && String(sess.ownerId) !== req.user.id) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    stopBotProcess(sessionId);
+    stopBotProcess(sess.id || sessionId);
     setTimeout(() => startBotProcess(sess), 1500);
     return res.json({ ok: true });
-  } catch {
+  } catch (err) {
+    log('Bot restart error: ' + err.message, 'error');
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -2047,8 +2157,8 @@ app.get('/api/stats', requireAuth, async (req, res) => {
       const sessions = loadSessions();
       const configs  = loadBotConfigs();
       totalUsers     = users.length;
-      totalSessions  = req.user.role === 'admin' ? sessions.length : sessions.filter(s => s.ownerId === req.user.id).length;
-      totalPanelBots = req.user.role === 'admin' ? configs.length : configs.filter(c => c.ownerId === req.user.id).length;
+      totalSessions  = req.user.role === 'admin' ? sessions.length : sessions.filter(s => String(s.ownerId) === req.user.id).length;
+      totalPanelBots = req.user.role === 'admin' ? configs.length : configs.filter(c => String(c.ownerId) === req.user.id).length;
     }
 
     activeBots = Object.keys(state.botProcesses).length + Object.keys(state.panelBotProcesses).length;
@@ -2236,7 +2346,87 @@ app.get('/api/bot-features', (req, res) => {
   });
 });
 
-app.get('/health', (req, res) => res.json({ status: 'ok', ts: Date.now(), version: '6.0.0', botName: 'NovaSpark Bot' }));
+// ── NEW v7: Admin broadcast notification to all / specific users ──────────────
+app.post('/api/admin/broadcast', requireAdmin, async (req, res) => {
+  const { title, body, icon = '📢', targetUserId } = req.body || {};
+  if (!title || !body) return res.status(400).json({ error: 'title and body required' });
+
+  try {
+    let recipients = [];
+    if (targetUserId) {
+      recipients = [targetUserId];
+    } else {
+      // Broadcast to all users
+      const users = await getAllUsers();
+      recipients = users.map(u => String(u.id || u._id));
+    }
+    recipients.forEach(uid => pushNotification(uid, title, body, icon));
+    log(`Admin broadcast "${title}" sent to ${recipients.length} user(s)`, 'ok');
+    return res.json({ ok: true, sent: recipients.length });
+  } catch (err) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── NEW v7: User search (admin) ────────────────────────────────────────────────
+app.get('/api/users/search', requireAdmin, async (req, res) => {
+  const q = (req.query.q || '').toLowerCase().trim();
+  if (!q) return res.status(400).json({ error: 'q query param required' });
+  try {
+    const users = await getAllUsers();
+    const results = users.filter(u =>
+      u.username.toLowerCase().includes(q) ||
+      (u.referralCode || '').toLowerCase().includes(q)
+    );
+    return res.json(results);
+  } catch (err) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── NEW v7: Bot process metrics ────────────────────────────────────────────────
+app.get('/api/admin/bot-metrics', requireAdmin, (req, res) => {
+  const running = Object.keys(state.botProcesses);
+  const panelRunning = Object.keys(state.panelBotProcesses);
+  return res.json({
+    runningSessionBots: running.length,
+    runningPanelBots: panelRunning.length,
+    sessionBotIds: running,
+    panelBotIds: panelRunning,
+    uptimeSeconds: Math.floor((Date.now() - state.startTime) / 1000),
+    pingCount: state.pingCount
+  });
+});
+
+// ── NEW v7: Bulk stop all bots (admin emergency) ───────────────────────────────
+app.post('/api/admin/stop-all', requireAdmin, (req, res) => {
+  const stopped = [];
+  Object.keys(state.botProcesses).forEach(id => { stopBotProcess(id); stopped.push(id); });
+  Object.keys(state.panelBotProcesses).forEach(id => { stopPanelBotProcess(id); stopped.push(id); });
+  log(`Admin emergency stop — ${stopped.length} bots stopped`, 'warn');
+  return res.json({ ok: true, stopped: stopped.length });
+});
+
+// ── NEW v7: Admin get all logs (full buffer) ───────────────────────────────────
+app.get('/api/admin/logs', requireAdmin, (req, res) => {
+  const level = req.query.level;
+  const sessionId = req.query.sessionId;
+  let logs = [...logBuffer];
+  if (level) logs = logs.filter(e => e.level === level);
+  if (sessionId) logs = logs.filter(e => e.sessionId === sessionId);
+  return res.json({ logs, total: logs.length });
+});
+
+// ── NEW v7: Server-sent health details ────────────────────────────────────────
+app.get('/health', (req, res) => res.json({
+  status: 'ok',
+  ts: Date.now(),
+  version: '7.0.0',
+  botName: 'NovaSpark Bot',
+  uptime: Math.floor((Date.now() - state.startTime) / 1000),
+  storage: useMongoDB ? 'mongodb' : 'file',
+  activeBots: Object.keys(state.botProcesses).length + Object.keys(state.panelBotProcesses).length
+}));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SERVE HTML PAGES
@@ -2607,9 +2797,11 @@ cron.schedule('0 * * * *', async () => {
 // ─────────────────────────────────────────────────────────────────────────────
 async function start() {
   await connectMongoDB();
+  // Seed file-based admin only when MongoDB is NOT used
+  if (!useMongoDB) ensureAdminExists();
   
   server.listen(PORT, () => {
-    log(`NOVASPARK V5 — NovaSpark Bot Edition running on port ${PORT}`, 'ok');
+    log(`NOVASPARK V7 — NovaSpark Bot Edition running on port ${PORT}`, 'ok');
     if (RENDER_URL) log(`Keep-alive targeting: ${RENDER_URL}`, 'info');
     else log(`Set RENDER_URL env var to enable keep-alive pings`, 'warn');
   });
@@ -2617,9 +2809,22 @@ async function start() {
 
 start();
 
-process.on('SIGTERM', () => {
-  log('SIGTERM received — shutting down bots...', 'warn');
+function gracefulShutdown(sig) {
+  log(sig + ' received — shutting down bots gracefully...', 'warn');
   Object.keys(state.botProcesses).forEach(stopBotProcess);
   Object.keys(state.panelBotProcesses).forEach(stopPanelBotProcess);
-  process.exit(0);
+  // Give processes 1.5s to clean up before hard exit
+  setTimeout(() => {
+    log('Shutdown complete.', 'ok');
+    process.exit(0);
+  }, 1500);
+}
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT',  () => gracefulShutdown('SIGINT'));
+process.on('uncaughtException', (err) => {
+  console.error('[UNCAUGHT]', err.message, err.stack);
+  // Don't crash on non-fatal errors
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[UNHANDLED REJECTION]', reason);
 });

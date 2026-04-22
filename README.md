@@ -1,9 +1,26 @@
-# ⚡ NOVASPARK V6
+# ⚡ NOVASPARK V7
 
-**Version:** 6.0.0  
+**Version:** 7.0.0  
 **Developer:** [Dev-Ntando](https://github.com/dev-modder)
 
 A powerful, hardened multi-host dashboard for running multiple WhatsApp bots on Render.com. Features a full JWT auth system, coin economy, admin panel, custom bot upload, live server stats, animated UI, security hardening, leaderboard, in-app notifications, user profiles, and much more.
+
+---
+
+## ✨ What's New in v7.0.0
+
+- **🐛 Session Bug Fixes** — All `ownerId` comparisons now use `String()` normalisation so MongoDB ObjectId vs string mismatches can no longer silently block session access
+- **🔀 RESTful Session Routes** — New `POST /api/sessions/:id/start`, `POST /api/sessions/:id/stop`, `POST /api/sessions/:id/restart`, `GET /api/sessions/:id/logs`, `GET /api/sessions/:id` routes (no more body-param-only `/api/bot/start`)
+- **📣 Admin Broadcast** — `POST /api/admin/broadcast` to push notifications to one user or all users at once
+- **🔍 User Search** — `GET /api/users/search?q=` for admins to search users by username or referral code
+- **📊 Bot Metrics** — `GET /api/admin/bot-metrics` shows running bot counts, uptime, ping count
+- **🛑 Emergency Stop All** — `POST /api/admin/stop-all` kills every running bot instantly
+- **📋 Full Log Viewer** — `GET /api/admin/logs?level=&sessionId=` returns filtered log buffer
+- **🚀 Startup Order Fix** — `ensureAdminExists()` now runs only after MongoDB connection is resolved, preventing race conditions on cold starts
+- **⚡ SIGINT Handler** — Ctrl+C / container stop now triggers graceful 1.5s shutdown (same as SIGTERM)
+- **🛡️ Uncaught Exception Handler** — `uncaughtException` and `unhandledRejection` no longer crash the process
+- **🏥 Enhanced `/health`** — Now returns storage mode, active bot count, and uptime seconds
+- **📦 render.yaml** — Added `healthCheckPath: /health` for Render health monitoring
 
 ---
 
@@ -63,6 +80,15 @@ A powerful, hardened multi-host dashboard for running multiple WhatsApp bots on 
 | **Button Ripple Effects** | ✅ NEW v6 |
 | **Skeleton Loading Screens** | ✅ NEW v6 |
 | **Animated Podium Leaderboard** | ✅ NEW v6 |
+| **RESTful Session Sub-Routes** | ✅ NEW v7 |
+| **Admin Broadcast Notifications** | ✅ NEW v7 |
+| **User Search (Admin)** | ✅ NEW v7 |
+| **Bot Metrics Endpoint** | ✅ NEW v7 |
+| **Emergency Stop All Bots** | ✅ NEW v7 |
+| **Admin Log Viewer API** | ✅ NEW v7 |
+| **ownerId Session Bug Fixes** | ✅ NEW v7 |
+| **SIGINT + Graceful Shutdown** | ✅ NEW v7 |
+| **Startup Race Condition Fix** | ✅ NEW v7 |
 
 ---
 
@@ -116,7 +142,9 @@ novaspark/
 - `POST /api/auth/change-password` *(NEW v6)*
 
 ### Sessions
-- `GET /api/sessions` · `POST /api/sessions` · `PUT /api/sessions/:id` · `DELETE /api/sessions/:id`
+- `GET /api/sessions` · `POST /api/sessions` · `GET /api/sessions/:id` · `PUT /api/sessions/:id` · `DELETE /api/sessions/:id`
+- `POST /api/sessions/:id/start` · `POST /api/sessions/:id/stop` · `POST /api/sessions/:id/restart` *(NEW v7)*
+- `GET /api/sessions/:id/logs` *(NEW v7)*
 
 ### Panel Bots
 - `GET /api/panel-bots` · `POST /api/panel-bots/upload` · `PUT /api/panel-bots/:id` · `DELETE /api/panel-bots/:id`
@@ -132,6 +160,13 @@ novaspark/
 ### v6 New
 - `GET /api/notifications` — Your notification feed
 - `POST /api/notifications/read` — Mark notification(s) read
+
+### v7 New (Admin)
+- `POST /api/admin/broadcast` — Push notification to all users or one user
+- `GET /api/users/search?q=` — Search users by username or referral code
+- `GET /api/admin/bot-metrics` — Running bot counts, uptime, ping stats
+- `POST /api/admin/stop-all` — Emergency stop every running bot
+- `GET /api/admin/logs?level=&sessionId=` — Filtered server log buffer
 - `DELETE /api/notifications/:id` — Delete a notification
 - `GET /api/activity` — Activity log (admin: all users; user: own)
 - `GET /api/leaderboard` — Top 50 users by coins + your rank
@@ -182,6 +217,26 @@ npm run dev   # → http://localhost:3000
 ---
 
 ## 📜 Changelog
+
+### v7.0.0
+
+- **Bug Fix:** All `ownerId` comparisons normalised with `String()` — fixes session 403 Forbidden errors with MongoDB
+- **Bug Fix:** `/api/bot/stop` and `/api/bot/restart` now correctly resolve MongoDB `_id` as string `id`
+- **Bug Fix:** `ensureAdminExists()` no longer runs at module load — deferred to after MongoDB connection, fixing cold-start race condition
+- **Bug Fix:** `start()` function now calls `ensureAdminExists()` only when file storage is active
+- **New:** `GET /api/sessions/:id` — Fetch a single session by ID
+- **New:** `POST /api/sessions/:id/start` / `stop` / `restart` — RESTful session control routes
+- **New:** `GET /api/sessions/:id/logs` — Per-session log retrieval (user: last 20min, admin: full)
+- **New:** `POST /api/admin/broadcast` — Push notification to all or one user
+- **New:** `GET /api/users/search?q=` — Admin user search
+- **New:** `GET /api/admin/bot-metrics` — Live bot process metrics
+- **New:** `POST /api/admin/stop-all` — Emergency kill switch for all bots
+- **New:** `GET /api/admin/logs` — Admin log buffer API with level/session filtering
+- **New:** `SIGINT` handler + graceful 1.5s shutdown (Ctrl+C, Docker stop)
+- **New:** `uncaughtException` + `unhandledRejection` handlers prevent silent crashes
+- **New:** `/health` returns storage mode, active bot count, uptime
+- **New:** `render.yaml` `healthCheckPath: /health`
+- Version bumped to `7.0.0`
 
 ### v6.0.0
 - Security: Helmet, rate limiting, brute-force lockout, password strength
