@@ -881,11 +881,17 @@ function logout() {
 // Init UI
 document.getElementById('user-name').textContent = currentUser.username || '—';
 document.getElementById('user-role').textContent = currentUser.hasVIPAccess ? 'VIP' : (currentUser.role || '—');
-if (currentUser.role === 'admin') {
-  document.getElementById('admin-btn').style.display = '';
-  document.getElementById('cleanup-btn').style.display = '';
-  document.getElementById('install-btn').style.display = '';
+
+function applyAdminUI(role) {
+  const isAdmin = role === 'admin';
+  document.getElementById('admin-btn').style.display = isAdmin ? '' : 'none';
+  const cleanupBtn = document.getElementById('cleanup-btn');
+  const installBtn = document.getElementById('install-btn');
+  if (cleanupBtn) cleanupBtn.style.display = isAdmin ? '' : 'none';
+  if (installBtn) installBtn.style.display = isAdmin ? '' : 'none';
 }
+
+applyAdminUI(currentUser.role);
 // Plan display init
 function updatePlanUI(plan) {
   const PLAN_LABELS = { free: 'FREE', basic: 'BASIC · $5/mo', pro: 'PRO · $10/mo' };
@@ -932,6 +938,8 @@ async function refreshMe() {
     document.getElementById('stat-referrals').textContent = u.referralCount || 0;
     document.getElementById('referral-code').textContent = u.referralCode || '—';
     document.getElementById('user-role').textContent = u.plan === 'pro' ? 'PRO' : (u.hasVIPAccess ? 'VIP' : (u.role || '—'));
+    // Always re-apply admin UI based on fresh server role
+    applyAdminUI(u.role);
   } catch {}
 }
 
