@@ -1,7 +1,7 @@
 {
   "name": "novaspark",
   "version": "8.0.0",
-  "description": "NOVASPARK V7 — Multi-Host WhatsApp Bot Dashboard with RESTful Session Routes, Bug Fixes, Admin Tools, and Security Hardening",
+  "description": "NOVASPARK V8 \u2014 Multi-Host WhatsApp Bot Dashboard with Health Monitor, Webhooks, Discord Alerts, 2FA, Uptime Graphs, Scheduled Restarts, and more",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

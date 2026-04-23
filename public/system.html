@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Resources — NovaSpark Nodes</title>
+<style>
+  :root { --bg:#0d0d1a; --card:#13132a; --card2:#1a1a35; --accent:#4f8ef7; --green:#2ecc71; --red:#e74c3c; --yellow:#f39c12; --text:#e0e0f0; --muted:#888aaa; --border:rgba(79,142,247,0.15); }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Segoe UI',sans-serif; min-height:100vh; }
+  .sidebar { position:fixed; left:0; top:0; bottom:0; width:220px; background:var(--card); border-right:1px solid var(--border); padding:24px 0; z-index:100; }
+  .sidebar .logo { padding:0 20px 24px; font-size:1.2rem; font-weight:700; color:var(--accent); }
+  .sidebar a { display:flex; align-items:center; gap:10px; padding:10px 20px; color:var(--muted); text-decoration:none; transition:.2s; font-size:.95rem; }
+  .sidebar a:hover, .sidebar a.active { color:var(--text); background:rgba(79,142,247,.1); border-left:3px solid var(--accent); padding-left:17px; }
+  .main { margin-left:220px; padding:32px; }
+  h1 { font-size:1.6rem; margin-bottom:8px; }
+  .subtitle { color:var(--muted); margin-bottom:28px; font-size:.95rem; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:20px; margin-bottom:28px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:24px; }
+  .card h3 { font-size:.8rem; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin-bottom:14px; }
+  .big-stat { font-size:2.4rem; font-weight:700; margin-bottom:4px; }
+  .stat-label { font-size:.85rem; color:var(--muted); }
+  .progress-bar { height:8px; background:var(--card2); border-radius:4px; overflow:hidden; margin-top:12px; }
+  .progress-fill { height:100%; border-radius:4px; transition:width .5s; }
+  .p-green { background:linear-gradient(90deg,#2ecc71,#1abc9c); }
+  .p-yellow { background:linear-gradient(90deg,#f39c12,#e67e22); }
+  .p-red { background:linear-gradient(90deg,#e74c3c,#c0392b); }
+  .bot-compare { width:100%; border-collapse:collapse; }
+  .bot-compare th { text-align:left; padding:10px; font-size:.8rem; color:var(--muted); border-bottom:1px solid var(--border); text-transform:uppercase; letter-spacing:.4px; }
+  .bot-compare td { padding:10px; font-size:.88rem; border-bottom:1px solid rgba(255,255,255,.03); }
+  .bot-compare tr:hover td { background:rgba(79,142,247,.05); }
+  .status-pill { display:inline-block; padding:2px 10px; border-radius:20px; font-size:.75rem; font-weight:700; }
+  .pill-green { background:#2ecc7120; color:var(--green); }
+  .pill-red { background:#e74c3c20; color:var(--red); }
+  .export-row { display:flex; gap:10px; margin-bottom:20px; }
+  .btn { padding:9px 18px; border:none; border-radius:8px; cursor:pointer; font-size:.85rem; font-weight:600; transition:.2s; }
+  .btn-blue { background:#4f8ef730; color:var(--accent); border:1px solid #4f8ef750; }
+  .btn-green { background:#2ecc7130; color:var(--green); border:1px solid #2ecc7150; }
+  .btn-red { background:#e74c3c30; color:var(--red); border:1px solid #e74c3c50; }
+  .btn:hover { filter:brightness(1.2); }
+  .toast { position:fixed; bottom:24px; right:24px; padding:14px 22px; border-radius:10px; font-size:.9rem; font-weight:600; animation:fadeIn .3s; z-index:9999; }
+  .toast.success { background:var(--green); color:#000; }
+  .toast.error { background:var(--red); color:#fff; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+  .info-row { display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--border); font-size:.88rem; }
+  .info-row:last-child { border-bottom:none; }
+  .info-label { color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="logo">⚡ NovaSpark</div>
+  <a href="/">📊 Dashboard</a>
+  <a href="/panel-bots.html">🤖 Panel Bots</a>
+  <a href="/health-monitor.html">🏥 Health Monitor</a>
+  <a href="/leaderboard.html">🏆 Leaderboard</a>
+  <a href="/notifications.html">🔔 Notifications</a>
+  <a href="/webhooks.html">🔗 Webhooks</a>
+  <a href="/system.html" class="active">🖥️ System</a>
+  <a href="/profile.html">👤 Profile</a>
+  <a href="/bank.html">💳 Bank</a>
+</div>
+<div class="main">
+  <h1>🖥️ System Resources</h1>
+  <p class="subtitle">Real-time server stats, bot comparison, and log export tools</p>
+
+  <!-- Resource Cards -->
+  <div class="grid" id="resource-cards">
+    <div class="card"><div class="big-stat" id="cpu-val">—%</div><div class="stat-label">CPU Load</div><div class="progress-bar"><div class="progress-fill p-green" id="cpu-bar" style="width:0%"></div></div></div>
+    <div class="card"><div class="big-stat" id="mem-val">—%</div><div class="stat-label">Memory Usage</div><div class="progress-bar"><div class="progress-fill p-yellow" id="mem-bar" style="width:0%"></div></div></div>
+    <div class="card"><div class="big-stat" id="disk-val">—%</div><div class="stat-label">Disk Usage</div><div class="progress-bar"><div class="progress-fill p-red" id="disk-bar" style="width:0%"></div></div></div>
+    <div class="card"><div class="big-stat" id="bots-val">—</div><div class="stat-label">Active Bots</div></div>
+  </div>
+
+  <!-- Server Info -->
+  <div class="card" style="margin-bottom:20px">
+    <h3>Server Info</h3>
+    <div id="server-info"><div style="color:var(--muted)">Loading...</div></div>
+  </div>
+
+  <!-- Log Export -->
+  <div class="card" style="margin-bottom:20px">
+    <h3>Export Logs</h3>
+    <p style="color:var(--muted);font-size:.88rem;margin-bottom:14px">Download server logs for debugging or archiving.</p>
+    <div class="export-row">
+      <button class="btn btn-blue" onclick="exportLogs('txt')">📄 Export as TXT</button>
+      <button class="btn btn-green" onclick="exportLogs('csv')">📊 Export as CSV</button>
+    </div>
+  </div>
+
+  <!-- Bot Comparison -->
+  <div class="card" style="margin-bottom:20px">
+    <h3>Bot Comparison</h3>
+    <div style="overflow-x:auto">
+      <table class="bot-compare">
+        <thead><tr>
+          <th>Name</th><th>Status</th><th>Plan</th><th>Uptime</th><th>Crashes</th><th>Auto-Restart</th>
+        </tr></thead>
+        <tbody id="bot-compare-tbody"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Rate Limit Stats (admin only) -->
+  <div class="card" id="rate-card" style="display:none;margin-bottom:20px">
+    <h3>Rate Limit Stats</h3>
+    <div id="rate-stats"><div style="color:var(--muted)">Loading...</div></div>
+    <div style="margin-top:12px;display:flex;gap:10px">
+      <button class="btn btn-red" onclick="clearLockouts()">🔓 Clear All Lockouts</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const token = localStorage.getItem('token');
+if (!token) location.href = '/login';
+
+async function api(path, method='GET', body=null) {
+  const r = await fetch(path, { method, headers: { 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }, body: body ? JSON.stringify(body) : null });
+  return r.json();
+}
+
+function toast(msg, type='success') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+function formatBytes(b) {
+  if (!b) return '—';
+  const gb = b / 1024**3;
+  if (gb >= 1) return gb.toFixed(1) + ' GB';
+  return (b / 1024**2).toFixed(0) + ' MB';
+}
+
+function formatUptime(s) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
+  return `${h}h ${m}m`;
+}
+
+async function loadResources() {
+  const d = await api('/api/admin/system-resources').catch(() => null);
+  if (!d || d.error) {
+    document.getElementById('cpu-val').textContent = 'N/A';
+    document.getElementById('mem-val').textContent = 'N/A';
+    return;
+  }
+  if (d.cpu) {
+    const pct = d.cpu.load;
+    document.getElementById('cpu-val').textContent = pct + '%';
+    document.getElementById('cpu-bar').style.width = pct + '%';
+    document.getElementById('cpu-bar').className = `progress-fill ${pct>80?'p-red':pct>50?'p-yellow':'p-green'}`;
+  }
+  if (d.memory) {
+    const pct = d.memory.usedPercent;
+    document.getElementById('mem-val').textContent = pct + '%';
+    document.getElementById('mem-bar').style.width = pct + '%';
+    document.getElementById('mem-bar').className = `progress-fill ${pct>80?'p-red':pct>60?'p-yellow':'p-green'}`;
+  }
+  if (d.disk) {
+    const pct = d.disk.usedPercent;
+    document.getElementById('disk-val').textContent = pct + '%';
+    document.getElementById('disk-bar').style.width = pct + '%';
+    document.getElementById('disk-bar').className = `progress-fill ${pct>85?'p-red':pct>65?'p-yellow':'p-green'}`;
+  }
+  document.getElementById('bots-val').textContent = d.activeBots || 0;
+
+  document.getElementById('server-info').innerHTML = `
+    <div class="info-row"><span class="info-label">Platform</span><span>${d.platform || '—'}</span></div>
+    <div class="info-row"><span class="info-label">Node.js</span><span>${d.nodeVersion || '—'}</span></div>
+    <div class="info-row"><span class="info-label">Uptime</span><span>${d.uptime ? formatUptime(d.uptime) : '—'}</span></div>
+    <div class="info-row"><span class="info-label">Memory</span><span>${d.memory ? `${formatBytes(d.memory.used)} / ${formatBytes(d.memory.total)}` : '—'}</span></div>
+    <div class="info-row"><span class="info-label">Disk</span><span>${d.disk ? `${formatBytes(d.disk.used)} / ${formatBytes(d.disk.total)}` : '—'}</span></div>
+    <div class="info-row"><span class="info-label">Network RX</span><span>${d.network ? formatBytes(d.network.rx_bytes) : '—'}</span></div>
+    <div class="info-row"><span class="info-label">Network TX</span><span>${d.network ? formatBytes(d.network.tx_bytes) : '—'}</span></div>
+  `;
+}
+
+async function loadBotComparison() {
+  const d = await api('/api/admin/bot-comparison').catch(() => null);
+  const tbody = document.getElementById('bot-compare-tbody');
+  if (!d || !d.bots || !d.bots.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">No bots found</td></tr>';
+    return;
+  }
+  tbody.innerHTML = d.bots.map(b => `
+    <tr>
+      <td><strong>${b.name}</strong><br><span style="font-size:.75rem;color:var(--muted)">${b.id}</span></td>
+      <td><span class="status-pill ${b.status==='running'?'pill-green':'pill-red'}">${b.status}</span></td>
+      <td>${b.plan}</td>
+      <td>${b.uptimePercent}%</td>
+      <td style="color:${b.crashes>0?'var(--red)':'var(--green)'}">${b.crashes}</td>
+      <td>${b.autoRestart ? '✅' : '❌'}</td>
+    </tr>
+  `).join('');
+}
+
+async function loadRateStats() {
+  const me = await api('/api/auth/me');
+  if (!me.isAdmin) return;
+  document.getElementById('rate-card').style.display = 'block';
+  const d = await api('/api/admin/rate-limits');
+  const locked = Object.entries(d.loginLockouts || {}).filter(([,v]) => v.lockedUntil && v.lockedUntil > Date.now());
+  document.getElementById('rate-stats').innerHTML = `
+    <div class="info-row"><span class="info-label">Total locked IPs</span><span style="color:${d.totalLocked>0?'var(--red)':'var(--green)'}">${d.totalLocked}</span></div>
+    <div class="info-row"><span class="info-label">Auth rate limit</span><span>20 req / 15min</span></div>
+    <div class="info-row"><span class="info-label">API rate limit</span><span>120 req / min</span></div>
+    ${locked.map(([ip, v]) => `<div class="info-row"><span class="info-label">🔒 ${ip}</span><span style="color:var(--red)">${v.attempts} attempts</span></div>`).join('')}
+  `;
+}
+
+async function clearLockouts() {
+  if (!confirm('Clear all IP lockouts?')) return;
+  const r = await api('/api/admin/rate-limits/clear', 'POST');
+  if (r.success) { toast('✅ All lockouts cleared'); loadRateStats(); }
+}
+
+function exportLogs(format) {
+  window.open(`/api/admin/logs/export?format=${format}&token=${token}`, '_blank');
+  toast(`📄 Downloading ${format.toUpperCase()} log file...`);
+}
+
+// Override fetch for token in URL for export
+const origFetch = window.fetch;
+
+loadResources();
+loadBotComparison();
+loadRateStats();
+setInterval(loadResources, 15000);
+setInterval(loadBotComparison, 60000);
+</script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Webhooks — NovaSpark Nodes</title>
+<style>
+  :root { --bg:#0d0d1a; --card:#13132a; --card2:#1a1a35; --accent:#4f8ef7; --green:#2ecc71; --red:#e74c3c; --yellow:#f39c12; --text:#e0e0f0; --muted:#888aaa; --border:rgba(79,142,247,0.15); }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Segoe UI',sans-serif; min-height:100vh; }
+  .sidebar { position:fixed; left:0; top:0; bottom:0; width:220px; background:var(--card); border-right:1px solid var(--border); padding:24px 0; z-index:100; }
+  .sidebar .logo { padding:0 20px 24px; font-size:1.2rem; font-weight:700; color:var(--accent); }
+  .sidebar a { display:flex; align-items:center; gap:10px; padding:10px 20px; color:var(--muted); text-decoration:none; transition:.2s; font-size:.95rem; }
+  .sidebar a:hover, .sidebar a.active { color:var(--text); background:rgba(79,142,247,.1); border-left:3px solid var(--accent); padding-left:17px; }
+  .main { margin-left:220px; padding:32px; }
+  h1 { font-size:1.6rem; margin-bottom:8px; }
+  .subtitle { color:var(--muted); margin-bottom:28px; font-size:.95rem; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:24px; margin-bottom:20px; }
+  .card h3 { font-size:1rem; font-weight:700; margin-bottom:16px; }
+  .form-group { margin-bottom:14px; }
+  .form-group label { display:block; font-size:.85rem; color:var(--muted); margin-bottom:6px; }
+  .form-group input, .form-group select { width:100%; padding:10px 14px; background:var(--card2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:.9rem; outline:none; }
+  .form-group input:focus { border-color:var(--accent); }
+  .btn { padding:9px 20px; border:none; border-radius:8px; cursor:pointer; font-size:.88rem; font-weight:600; transition:.2s; }
+  .btn-primary { background:var(--accent); color:#fff; }
+  .btn-green { background:#2ecc7130; color:var(--green); border:1px solid #2ecc7150; }
+  .btn-red { background:#e74c3c30; color:var(--red); border:1px solid #e74c3c50; }
+  .btn-yellow { background:#f39c1230; color:var(--yellow); border:1px solid #f39c1250; }
+  .btn:hover { filter:brightness(1.15); }
+  .webhook-item { background:var(--card2); border-radius:10px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:flex-start; gap:14px; }
+  .webhook-url { font-family:monospace; font-size:.85rem; color:var(--accent); word-break:break-all; }
+  .webhook-events { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+  .event-badge { background:rgba(79,142,247,.15); color:var(--accent); padding:2px 8px; border-radius:4px; font-size:.75rem; }
+  .webhook-actions { display:flex; gap:8px; flex-shrink:0; }
+  .empty { text-align:center; padding:40px; color:var(--muted); }
+  .discord-card { border:1px solid rgba(88,101,242,.4); }
+  .discord-indicator { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
+  .toast { position:fixed; bottom:24px; right:24px; padding:14px 22px; border-radius:10px; font-size:.9rem; font-weight:600; animation:fadeIn .3s; z-index:9999; }
+  .toast.success { background:var(--green); color:#000; }
+  .toast.error { background:var(--red); color:#fff; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+  .events-checkboxes { display:flex; gap:12px; flex-wrap:wrap; }
+  .events-checkboxes label { display:flex; align-items:center; gap:6px; font-size:.85rem; cursor:pointer; }
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="logo">⚡ NovaSpark</div>
+  <a href="/">📊 Dashboard</a>
+  <a href="/panel-bots.html">🤖 Panel Bots</a>
+  <a href="/health-monitor.html">🏥 Health Monitor</a>
+  <a href="/leaderboard.html">🏆 Leaderboard</a>
+  <a href="/notifications.html">🔔 Notifications</a>
+  <a href="/webhooks.html" class="active">🔗 Webhooks</a>
+  <a href="/system.html">🖥️ System</a>
+  <a href="/profile.html">👤 Profile</a>
+  <a href="/bank.html">💳 Bank</a>
+</div>
+<div class="main">
+  <h1>🔗 Webhooks</h1>
+  <p class="subtitle">Get notified when your bots start, stop, or crash — delivered to any URL in real time</p>
+
+  <!-- Discord Webhook -->
+  <div class="card discord-card">
+    <h3>🎮 Discord Alerts</h3>
+    <p style="color:var(--muted);font-size:.88rem;margin-bottom:14px">Set <code style="background:var(--card2);padding:2px 6px;border-radius:4px">DISCORD_WEBHOOK_URL</code> env variable to enable automatic Discord alerts for bot events.</p>
+    <div id="discord-status" style="margin-bottom:14px">Checking...</div>
+    <button class="btn btn-yellow" onclick="testDiscord()">🔔 Send Test Alert</button>
+  </div>
+
+  <!-- Register Webhook -->
+  <div class="card">
+    <h3>➕ Register Webhook</h3>
+    <div class="form-group">
+      <label>Webhook URL *</label>
+      <input type="url" id="wh-url" placeholder="https://your-server.com/webhook">
+    </div>
+    <div class="form-group">
+      <label>Secret (optional — sent in X-Webhook-Secret header)</label>
+      <input type="text" id="wh-secret" placeholder="your-secret-key">
+    </div>
+    <div class="form-group">
+      <label>Events to listen for</label>
+      <div class="events-checkboxes">
+        <label><input type="checkbox" value="bot.start" checked> bot.start</label>
+        <label><input type="checkbox" value="bot.stop" checked> bot.stop</label>
+        <label><input type="checkbox" value="bot.crash" checked> bot.crash</label>
+        <label><input type="checkbox" value="bot.restart"> bot.restart</label>
+        <label><input type="checkbox" value="user.signup"> user.signup</label>
+        <label><input type="checkbox" value="payment.received"> payment.received</label>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="registerWebhook()">Register Webhook</button>
+  </div>
+
+  <!-- Webhook List -->
+  <div class="card">
+    <h3>📋 Registered Webhooks</h3>
+    <div id="webhooks-list"><div class="empty">Loading...</div></div>
+  </div>
+
+  <!-- Payload Format -->
+  <div class="card">
+    <h3>📄 Payload Format</h3>
+    <pre style="background:var(--card2);padding:16px;border-radius:8px;font-size:.82rem;overflow-x:auto;color:#7ec8f5">{
+  "event": "bot.crash",
+  "ts": 1748000000000,
+  "sessionId": "abc123",
+  "botName": "MyBot",
+  "reason": "process exited with code 1"
+}</pre>
+  </div>
+</div>
+
+<script>
+const token = localStorage.getItem('token');
+if (!token) location.href = '/login';
+
+async function api(path, method='GET', body=null) {
+  const r = await fetch(path, { method, headers: { 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }, body: body ? JSON.stringify(body) : null });
+  return r.json();
+}
+
+function toast(msg, type='success') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+async function loadDiscordStatus() {
+  const d = await api('/api/discord-alert');
+  const el = document.getElementById('discord-status');
+  if (d.configured) {
+    el.innerHTML = '<span class="discord-indicator" style="background:var(--green)"></span><span style="color:var(--green);font-weight:600">Discord alerts configured ✅</span>';
+  } else {
+    el.innerHTML = '<span class="discord-indicator" style="background:var(--red)"></span><span style="color:var(--muted)">Not configured — set DISCORD_WEBHOOK_URL env var on Render</span>';
+  }
+}
+
+async function testDiscord() {
+  const r = await api('/api/discord-alert/test', 'POST');
+  if (r.success) toast('✅ Test alert sent to Discord!');
+  else toast('❌ ' + (r.error || 'Not configured'), 'error');
+}
+
+async function registerWebhook() {
+  const url = document.getElementById('wh-url').value.trim();
+  const secret = document.getElementById('wh-secret').value.trim();
+  if (!url) return toast('❌ URL is required', 'error');
+  const events = [...document.querySelectorAll('.events-checkboxes input:checked')].map(i => i.value);
+  const r = await api('/api/webhooks', 'POST', { url, secret, events });
+  if (r.success) { toast('✅ Webhook registered!'); loadWebhooks(); }
+  else toast('❌ ' + (r.error || 'Failed'), 'error');
+}
+
+async function deleteWebhook(id) {
+  if (!confirm('Remove this webhook?')) return;
+  const r = await api(`/api/webhooks/${id}`, 'DELETE');
+  if (r.success) { toast('🗑️ Webhook removed'); loadWebhooks(); }
+  else toast('❌ Failed', 'error');
+}
+
+async function testWebhook(id) {
+  const r = await api(`/api/webhooks/${id}/test`, 'POST');
+  if (r.success) toast('🔔 Test payload sent!');
+  else toast('❌ ' + (r.error || 'Failed'), 'error');
+}
+
+async function loadWebhooks() {
+  const d = await api('/api/webhooks');
+  const hooks = d.webhooks || [];
+  const el = document.getElementById('webhooks-list');
+  if (!hooks.length) { el.innerHTML = '<div class="empty">No webhooks registered yet.</div>'; return; }
+  el.innerHTML = hooks.map(h => `
+    <div class="webhook-item">
+      <div style="flex:1">
+        <div class="webhook-url">${h.url}</div>
+        <div class="webhook-events">${(h.events||[]).map(e => `<span class="event-badge">${e}</span>`).join('')}</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:4px">Created: ${new Date(h.createdAt).toLocaleDateString()}</div>
+      </div>
+      <div class="webhook-actions">
+        <button class="btn btn-yellow" onclick="testWebhook('${h.id}')">Test</button>
+        <button class="btn btn-red" onclick="deleteWebhook('${h.id}')">Remove</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+loadDiscordStatus();
+loadWebhooks();
+</script>
+</body>
+</html>

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Health Monitor — NovaSpark Nodes</title>
+<style>
+  :root {
+    --bg: #0d0d1a; --card: #13132a; --card2: #1a1a35;
+    --accent: #4f8ef7; --green: #2ecc71; --red: #e74c3c;
+    --yellow: #f39c12; --text: #e0e0f0; --muted: #888aaa;
+    --border: rgba(79,142,247,0.15);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Segoe UI',sans-serif; min-height:100vh; }
+  .sidebar { position:fixed; left:0; top:0; bottom:0; width:220px; background:var(--card); border-right:1px solid var(--border); padding:24px 0; z-index:100; }
+  .sidebar .logo { padding:0 20px 24px; font-size:1.2rem; font-weight:700; color:var(--accent); letter-spacing:1px; }
+  .sidebar a { display:flex; align-items:center; gap:10px; padding:10px 20px; color:var(--muted); text-decoration:none; transition:.2s; font-size:.95rem; }
+  .sidebar a:hover, .sidebar a.active { color:var(--text); background:rgba(79,142,247,.1); border-left:3px solid var(--accent); padding-left:17px; }
+  .main { margin-left:220px; padding:32px; }
+  h1 { font-size:1.6rem; margin-bottom:8px; } 
+  .subtitle { color:var(--muted); margin-bottom:28px; font-size:.95rem; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:20px; margin-bottom:32px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:22px; }
+  .card h3 { font-size:1rem; color:var(--muted); margin-bottom:14px; text-transform:uppercase; letter-spacing:.5px; font-size:.8rem; }
+  .bot-row { display:flex; align-items:center; justify-content:space-between; padding:14px; background:var(--card2); border-radius:10px; margin-bottom:10px; }
+  .bot-info { display:flex; align-items:center; gap:12px; }
+  .status-dot { width:10px; height:10px; border-radius:50%; }
+  .status-dot.running { background:var(--green); box-shadow:0 0 6px var(--green); }
+  .status-dot.stopped { background:var(--red); }
+  .bot-name { font-weight:600; font-size:.95rem; }
+  .bot-meta { font-size:.8rem; color:var(--muted); }
+  .bot-actions { display:flex; gap:8px; }
+  .btn { padding:6px 14px; border:none; border-radius:7px; cursor:pointer; font-size:.82rem; font-weight:600; transition:.2s; }
+  .btn-green { background:#2ecc7130; color:var(--green); border:1px solid #2ecc7150; }
+  .btn-red { background:#e74c3c30; color:var(--red); border:1px solid #e74c3c50; }
+  .btn-blue { background:#4f8ef730; color:var(--accent); border:1px solid #4f8ef750; }
+  .btn:hover { filter:brightness(1.2); }
+  .uptime-bar { height:6px; background:var(--card2); border-radius:3px; overflow:hidden; margin-top:8px; }
+  .uptime-fill { height:100%; border-radius:3px; transition:width .5s; }
+  .uptime-fill.good { background:var(--green); }
+  .uptime-fill.ok { background:var(--yellow); }
+  .uptime-fill.bad { background:var(--red); }
+  .stat-row { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
+  .stat-row:last-child { border-bottom:none; }
+  .stat-label { color:var(--muted); font-size:.88rem; }
+  .stat-value { font-weight:600; font-size:.88rem; }
+  .badge { display:inline-block; padding:2px 10px; border-radius:20px; font-size:.75rem; font-weight:700; }
+  .badge-green { background:#2ecc7120; color:var(--green); }
+  .badge-red { background:#e74c3c20; color:var(--red); }
+  .badge-yellow { background:#f39c1220; color:var(--yellow); }
+  .toast { position:fixed; bottom:24px; right:24px; padding:14px 22px; border-radius:10px; font-size:.9rem; font-weight:600; animation:fadeIn .3s; z-index:9999; }
+  .toast.success { background:#2ecc71; color:#000; }
+  .toast.error { background:#e74c3c; color:#fff; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+  .refresh-btn { background:var(--card2); border:1px solid var(--border); color:var(--accent); padding:8px 18px; border-radius:8px; cursor:pointer; font-size:.88rem; margin-bottom:20px; }
+  .section-title { font-size:1.1rem; font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+  #loading { text-align:center; padding:60px; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="logo">⚡ NovaSpark</div>
+  <a href="/">📊 Dashboard</a>
+  <a href="/panel-bots.html">🤖 Panel Bots</a>
+  <a href="/health-monitor.html" class="active">🏥 Health Monitor</a>
+  <a href="/leaderboard.html">🏆 Leaderboard</a>
+  <a href="/notifications.html">🔔 Notifications</a>
+  <a href="/webhooks.html">🔗 Webhooks</a>
+  <a href="/system.html">🖥️ System</a>
+  <a href="/profile.html">👤 Profile</a>
+  <a href="/bank.html">💳 Bank</a>
+  <a href="/bot-features.html">✨ Features</a>
+</div>
+<div class="main">
+  <h1>🏥 Bot Health Monitor</h1>
+  <p class="subtitle">Real-time health, crash history, uptime graphs, and auto-restart controls</p>
+  <button class="refresh-btn" onclick="loadHealth()">🔄 Refresh</button>
+  <div id="loading">Loading health data...</div>
+  <div id="content" style="display:none">
+    <div class="grid" id="bot-cards"></div>
+  </div>
+</div>
+
+<script>
+const token = localStorage.getItem('token');
+if (!token) location.href = '/login';
+
+async function api(path, method='GET', body=null) {
+  const r = await fetch(path, { method, headers: { 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }, body: body ? JSON.stringify(body) : null });
+  return r.json();
+}
+
+function toast(msg, type='success') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+async function toggleAutoRestart(id, enabled) {
+  await api(`/api/health-monitor/${id}/auto-restart`, 'POST', { enabled });
+  toast(enabled ? '✅ Auto-restart enabled' : '🔴 Auto-restart disabled');
+  loadHealth();
+}
+
+async function restartBot(id) {
+  if (!confirm('Restart this bot now?')) return;
+  await api(`/api/sessions/${id}/restart`, 'POST');
+  toast('🔄 Bot restarting...');
+  setTimeout(loadHealth, 3000);
+}
+
+function uptimeColor(pct) {
+  if (pct >= 90) return 'good';
+  if (pct >= 60) return 'ok';
+  return 'bad';
+}
+
+async function loadHealth() {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('content').style.display = 'none';
+
+  const data = await api('/api/health-monitor');
+  const bots = data.bots || [];
+
+  const container = document.getElementById('bot-cards');
+  container.innerHTML = '';
+
+  if (!bots.length) {
+    container.innerHTML = '<p style="color:var(--muted)">No bot sessions found.</p>';
+  }
+
+  for (const bot of bots) {
+    const h = bot.health || {};
+    const crashes = h.crashes || 0;
+    const restarts = h.restarts || 0;
+    const isRunning = bot.status === 'running';
+    const uptimePct = h.uptimePercent !== undefined ? h.uptimePercent : (isRunning ? 100 : 0);
+
+    // Get uptime graph
+    const graphData = await api(`/api/sessions/${bot.id}/uptime-graph`).catch(() => ({ points: [], uptimePercent: 0 }));
+    const graphPct = graphData.uptimePercent || uptimePct;
+
+    const recentEvents = (h.events || []).slice(-5).reverse();
+    const eventsHtml = recentEvents.map(e =>
+      `<div class="stat-row"><span class="stat-label">${new Date(e.ts).toLocaleString()}</span><span class="stat-value">${e.event}</span></div>`
+    ).join('') || '<div class="stat-row"><span class="stat-label" style="color:var(--muted)">No events yet</span></div>';
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="bot-row">
+        <div class="bot-info">
+          <div class="status-dot ${isRunning?'running':'stopped'}"></div>
+          <div>
+            <div class="bot-name">${bot.name}</div>
+            <div class="bot-meta">${bot.id}</div>
+          </div>
+        </div>
+        <div class="bot-actions">
+          <button class="btn btn-blue" onclick="restartBot('${bot.id}')">🔄</button>
+        </div>
+      </div>
+      <div style="margin:14px 0">
+        <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px">
+          <span style="color:var(--muted)">24hr Uptime</span>
+          <span style="color:${graphPct>=90?'var(--green)':graphPct>=60?'var(--yellow)':'var(--red)'};font-weight:700">${graphPct}%</span>
+        </div>
+        <div class="uptime-bar"><div class="uptime-fill ${uptimeColor(graphPct)}" style="width:${graphPct}%"></div></div>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">💥 Crashes</span>
+        <span class="stat-value" style="color:${crashes>0?'var(--red)':'var(--green)'}">${crashes}</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">🔄 Restarts</span>
+        <span class="stat-value">${restarts}</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">🤖 Auto-Restart</span>
+        <span class="stat-value">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="checkbox" id="ar-${bot.id}" ${bot.autoRestart?'checked':''} onchange="toggleAutoRestart('${bot.id}',this.checked)" style="width:16px;height:16px;cursor:pointer">
+            <span style="font-size:.82rem;color:var(--muted)">${bot.autoRestart?'Enabled':'Disabled'}</span>
+          </label>
+        </span>
+      </div>
+      <div style="margin-top:14px">
+        <div class="section-title" style="font-size:.82rem;margin-bottom:8px;color:var(--muted)">RECENT EVENTS</div>
+        ${eventsHtml}
+      </div>
+    `;
+    container.appendChild(card);
+  }
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').style.display = 'block';
+}
+
+loadHealth();
+setInterval(loadHealth, 30000); // auto-refresh every 30s
+</script>
+</body>
+</html>
