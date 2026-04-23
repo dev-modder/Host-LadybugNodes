@@ -202,7 +202,7 @@
     <footer>
       <div class="container">
         <div class="footer-inner">
-          ⚡ NOVASPARK BOT <strong>V5</strong> &nbsp;·&nbsp; Built by <strong style="color:var(--accent2)">Dev-Ntando</strong>
+          ⚡ NOVASPARK BOT <strong>V8</strong> &nbsp;·&nbsp; Built by <strong style="color:var(--accent2)">Dev-Ntando</strong>
           &nbsp;·&nbsp; <a href="/terms.html">Terms of Service</a>
           &nbsp;·&nbsp; <a href="/">Dashboard</a>
           &nbsp;·&nbsp; <a href="/panel-bots.html">Panel Bots</a>
@@ -344,123 +344,161 @@
 
   /* LOAD FEATURES */
   var FALLBACK = {
-    version: '5.0.0',
+    version: '8.0.0',
     botName: 'NovaSpark Bot',
     categories: [
-      { name: 'Free Commands', icon: '🆓', commands: [
-        { cmd: '.menu [group/ai/games/media/social/tools]', desc: 'Categorized command menu' },
+      { name: 'AI & Intelligence', icon: '🤖', commands: [
+        { cmd: '.gpt <msg>', desc: 'ChatGPT AI chat' },
+        { cmd: '.gemini <msg>', desc: 'Google Gemini AI' },
+        { cmd: '.character <name> <msg>', desc: 'AI persona - luffy, naruto, batman and more' },
+        { cmd: '.autochat on/off', desc: 'Auto AI replies to all messages' },
+        { cmd: '.imagine <prompt>', desc: 'AI image generation' },
+        { cmd: '.imagine2 <prompt>', desc: 'Alt AI image engine' },
+        { cmd: '.remini', desc: 'AI photo enhancer - restore old images' },
+        { cmd: '.removebg', desc: 'Remove image background instantly' },
+        { cmd: '.genmusic <prompt>', desc: 'AI music generation - cover art, lyrics, audio' }
+      ]},
+      { name: 'Study & School', icon: '📚', commands: [
         { cmd: '.homework <question>', desc: 'Detailed AI answer to any question' },
         { cmd: '.essay <topic>', desc: 'Full structured essay on any topic' },
         { cmd: '.summarize <text>', desc: 'Bullet-point summary of any text' },
-        { cmd: '.translate <lang> <text>', desc: 'Translate anything to any language' },
         { cmd: '.studytips <subject>', desc: 'AI study tips for any subject' },
         { cmd: '.math <problem>', desc: 'Step-by-step math solutions' },
-        { cmd: '.sticker', desc: 'Reply to image/video to create a sticker' },
-        { cmd: '.imagine <prompt>', desc: 'Free AI image generation' },
-        { cmd: '.tts [lang] <text>', desc: 'Text to speech — real voice note' },
-        { cmd: '.news [topic]', desc: 'Live news headlines' },
-        { cmd: '.qr <text>', desc: 'Generate a QR code' },
-        { cmd: '.currency 100 USD ZAR', desc: 'Real-time currency exchange rates' },
-        { cmd: '.poll Q | A | B | C', desc: 'Create a native WhatsApp poll' },
-        { cmd: '.fact', desc: 'Get a verified random fact' },
-        { cmd: '.urban <word>', desc: 'Urban Dictionary definition' },
-        { cmd: '.bmi <kg> <cm>', desc: 'BMI calculator with health info' },
-        { cmd: '.groupinfo', desc: 'Group analytics and member stats' },
-        { cmd: '.roast @user', desc: 'AI-generated roast' },
-        { cmd: '.weather <city>', desc: '3-day weather forecast' },
-        { cmd: '.calc <expr>', desc: 'Scientific calculator (sin, cos, sqrt, etc.)' },
-        { cmd: '.time [tz]', desc: 'World clock — 10 cities or custom timezone' }
+        { cmd: '.translate <lang> <text>', desc: 'Translate anything to any language' },
+        { cmd: '.pdf', desc: 'Generate PDF document' }
       ]},
-      { name: 'Games', icon: '🎮', commands: [
-        { cmd: '.wordle', desc: 'Play Wordle — guess the 5-letter word' },
+      { name: 'Games & Challenges', icon: '🎮', commands: [
+        { cmd: '.wordle', desc: 'Play Wordle - guess the 5-letter word' },
         { cmd: '.trivia', desc: 'Live trivia quiz with score tracking' },
-        { cmd: '.hangman', desc: 'Classic hangman word game' },
-        { cmd: '.rps rock/paper/scissors', desc: 'Rock Paper Scissors vs the bot' }
+        { cmd: '.hangman', desc: 'Classic hangman word game with ASCII art' },
+        { cmd: '.rps rock/paper/scissors', desc: 'Rock Paper Scissors with score tracking' },
+        { cmd: '.8ball <question>', desc: 'Ask the magic 8-ball' },
+        { cmd: '.dice [N] / .flip / .roulette', desc: 'Dice roll, coin flip, or roulette' },
+        { cmd: '.truth / .dare / .wouldyourather', desc: 'Truth or Dare challenges' },
+        { cmd: '.twotruth', desc: 'Two Truths and a Lie' },
+        { cmd: '.nhie', desc: 'Never Have I Ever' }
+      ]},
+      { name: 'Fun & Social', icon: '😂', commands: [
+        { cmd: '.joke / .meme / .riddle', desc: 'Random joke, meme, or riddle' },
+        { cmd: '.roast @user / .insult @user', desc: 'AI-generated roast or savage insult' },
+        { cmd: '.flirt [@user] / .compliment [@user]', desc: 'Flirt lines or genuine compliment' },
+        { cmd: '.ship @u1 @u2', desc: 'Love compatibility score with emoji bar' },
+        { cmd: '.couple @u1 @u2', desc: 'Couple name generator' },
+        { cmd: '.vibe', desc: 'Vibe and spirit level check' },
+        { cmd: '.rate <anything>', desc: 'Rate anything out of 10' },
+        { cmd: '.zodiac <sign>', desc: 'Zodiac reading' },
+        { cmd: '.horoscope <sign>', desc: 'Daily horoscope' },
+        { cmd: '.confess <msg>', desc: 'Anonymous confession' },
+        { cmd: '.waifu / .gayrate [@user]', desc: 'Waifu image or fun gaydar rating' }
+      ]},
+      { name: 'Tools & Utilities', icon: '🔧', commands: [
+        { cmd: '.weather <city>', desc: '3-day weather forecast' },
+        { cmd: '.news [topic]', desc: 'Latest news headlines' },
+        { cmd: '.qr <text>', desc: 'Generate a QR code' },
+        { cmd: '.calc <expr>', desc: 'Scientific calculator - sin, cos, sqrt, log, pi' },
+        { cmd: '.bmi <kg> <cm> / .age <date>', desc: 'BMI calculator or age from birthdate' },
+        { cmd: '.time [zone] / .countdown <date>', desc: 'World clock or countdown timer' },
+        { cmd: '.currency 100 USD ZAR', desc: 'Real-time currency exchange rates' },
+        { cmd: '.convert <v> <from> <to>', desc: 'Unit converter' },
+        { cmd: '.color <hex/name>', desc: 'Color info - HEX, RGB, HSL values' },
+        { cmd: '.lyrics <song>', desc: 'Get full song lyrics' },
+        { cmd: '.truthfact', desc: 'Mind-blowing random fact' },
+        { cmd: '.tts [lang] <text>', desc: 'Text-to-speech real voice note' },
+        { cmd: '.textart <style> <text>', desc: 'Fancy ASCII/Unicode text art (7 styles)' },
+        { cmd: '.encode <type> <text>', desc: 'Encode to base64 or morse code' },
+        { cmd: '.password [len] / .ip <addr>', desc: 'Generate password or lookup IP address' },
+        { cmd: '.crypto <coin> / .shorturl <url>', desc: 'Crypto price or URL shortener' },
+        { cmd: '.ssweb <url> / .define / .urban', desc: 'Website screenshot, dictionary, Urban Dictionary' },
+        { cmd: '.fact / .catfact / .dogfact / .numberfact <N>', desc: 'Random facts of all kinds' },
+        { cmd: '.motivate / .advice / .quote', desc: 'Motivation, advice, or inspirational quote' },
+        { cmd: '.getpp @user / .tempnumber / .myactivity', desc: 'Get profile photo, temp number, or activity log' },
+        { cmd: '.poll Q | A | B | C', desc: 'Create a native WhatsApp poll' }
       ]},
       { name: 'Downloads', icon: '📥', commands: [
-        { cmd: '.tiktok <url>', desc: 'TikTok video downloader (no watermark)' },
-        { cmd: '.yt <query>', desc: 'YouTube video search and download' },
-        { cmd: '.ytmp3 <url>', desc: 'Download YouTube audio as MP3' },
-        { cmd: '.ytmp4 <url>', desc: 'Download YouTube video as MP4' },
-        { cmd: '.instagram <url>', desc: 'Download Instagram Reels/Posts' },
-        { cmd: '.facebook <url>', desc: 'Download Facebook videos' },
-        { cmd: '.pinterest <url>', desc: 'Download Pinterest images' },
-        { cmd: '.spotify <query>', desc: 'Spotify track info & preview' }
+        { cmd: '.ytmp3 <query/url>', desc: 'YouTube to MP3 audio download' },
+        { cmd: '.ytmp4 <query/url>', desc: 'YouTube to MP4 video download' },
+        { cmd: '.tiktok / .instagram / .facebook / .pinterest', desc: 'Download from social media platforms' },
+        { cmd: '.spotify <query>', desc: 'Spotify track info and preview' }
       ]},
-      { name: 'Media & Tools', icon: '🛠️', commands: [
-        { cmd: '.removebg', desc: 'Remove image background instantly' },
-        { cmd: '.textart <style> <text>', desc: 'Fancy ASCII text art styles' },
-        { cmd: '.viewonce', desc: 'Forward view-once messages' },
-        { cmd: '.simage', desc: 'Save sticker as image' },
-        { cmd: '.ssweb <url>', desc: 'Screenshot any website' }
+      { name: 'Media & Visuals', icon: '🎬', commands: [
+        { cmd: '.sticker', desc: 'Reply to image/video to create a sticker' },
+        { cmd: '.simage <url> / .viewonce', desc: 'Save sticker as image or view once media' },
+        { cmd: '.remini / .removebg', desc: 'AI photo enhancer or background remover' }
       ]},
-      { name: 'AI & Smart Features', icon: '🤖', commands: [
-        { cmd: '.gpt <prompt>', desc: 'GPT-4 powered text generation' },
-        { cmd: '.gemini <prompt>', desc: 'Google Gemini AI assistant' },
-        { cmd: '.imagine2 <prompt>', desc: 'Premium AI image generation' },
-        { cmd: '.remini', desc: 'AI photo enhancer — restore old images' },
-        { cmd: '.character <name>', desc: 'Chat as a famous character' },
-        { cmd: '.autochat on/off', desc: 'AI auto-reply mode for the group' }
-      ]},
-      { name: 'Fun & Social', icon: '🎉', commands: [
-        { cmd: '.joke', desc: 'Random joke from multiple categories' },
-        { cmd: '.meme', desc: 'Fetch a random meme image' },
-        { cmd: '.quote', desc: 'Inspiring quote of the moment' },
-        { cmd: '.8ball <question>', desc: 'Ask the magic 8-ball' },
-        { cmd: '.flirt', desc: 'Smooth flirt lines' },
-        { cmd: '.gayrate @user', desc: 'Fun gaydar rating (just for laughs)' },
-        { cmd: '.lyrics <song>', desc: 'Get song lyrics' },
-        { cmd: '.ship @user1 @user2', desc: 'Love compatibility score with emoji bar' },
-        { cmd: '.truth', desc: 'Truth or Dare — curated truth question' },
-        { cmd: '.dare', desc: 'Truth or Dare — dare challenge' },
-        { cmd: '.compliment [@user]', desc: 'Tag someone with a genuine compliment' },
-        { cmd: '.insult [@user]', desc: 'Funny (not cruel) savage roast' },
-        { cmd: '.motivate [@user]', desc: 'Live motivation from quotable.io' }
+      { name: 'Faith & Inspiration', icon: '✝️', commands: [
+        { cmd: '.tbj / .tbj <N> / .tbj search <topic>', desc: 'TB Joshua video clips and messages' },
+        { cmd: '.tbj quote / .tbj list', desc: 'TB Joshua quotes and clip list' },
+        { cmd: '.bible <ref>', desc: 'KJV Bible verse lookup (e.g. John 3:16)' },
+        { cmd: '.verse / .prayer / .pray <request>', desc: 'Random verse, prayer, or prayer request' },
+        { cmd: '.autoverse / .autoprayer / .autogm on HH:MM', desc: 'Scheduled daily verses, prayers, or good morning' }
       ]},
       { name: 'Group Management', icon: '👥', commands: [
-        { cmd: '.warn @user [reason]', desc: 'Warn a group member' },
-        { cmd: '.warns @user', desc: 'Check a member\'s warnings' },
-        { cmd: '.clearwarn @user', desc: 'Clear all warnings for a member' },
-        { cmd: '.setwarnlimit N', desc: 'Set auto-kick threshold' },
-        { cmd: '.kick @user', desc: 'Remove a member from the group' },
-        { cmd: '.promote @user', desc: 'Promote member to admin' },
-        { cmd: '.demote @user', desc: 'Remove admin from a member' },
-        { cmd: '.mute', desc: 'Lock the group (admins only can send)' },
-        { cmd: '.unmute', desc: 'Unlock the group for everyone' },
-        { cmd: '.tagall [msg]', desc: 'Tag all group members' },
-        { cmd: '.hidetag [msg]', desc: 'Tag all silently (no mention visible)' },
-        { cmd: '.antilink on/off', desc: 'Auto-remove link messages' },
-        { cmd: '.antiword on/off/add/remove', desc: 'Per-group bad word filter' },
-        { cmd: '.antitoxic on/off', desc: 'AI-powered toxic message filter' },
-        { cmd: '.nightmode on/off', desc: 'Auto mute/unmute on schedule' },
-        { cmd: '.vip on/off/add/remove/list', desc: 'VIP-only mode — restrict non-VIPs' },
-        { cmd: '.ghost on/off', desc: 'Ghost mode — hide bot presence' },
-        { cmd: '.autoreact on/off', desc: 'Auto-react to messages with emoji' },
-        { cmd: '.welcome on/off [msg]', desc: 'Custom welcome messages for new members' },
-        { cmd: '.goodbye on/off [msg]', desc: 'Custom goodbye messages' },
-        { cmd: '.groupstats', desc: 'Full group analytics dashboard' },
-        { cmd: '.grouplink', desc: 'Get the group invite link' },
-        { cmd: '.resetlink', desc: 'Reset the group invite link' },
-        { cmd: '.delete', desc: 'Delete a replied message' }
+        { cmd: '.kick / .promote / .demote / .ban / .unban', desc: 'Manage group members and admins' },
+        { cmd: '.warn @user / .warns @user / .clearwarn / .listwarn', desc: 'Warning system with configurable auto-kick threshold' },
+        { cmd: '.setwarnlimit N', desc: 'Set auto-kick warn threshold' },
+        { cmd: '.tagall / .hidetag / .tagadmins / .delete', desc: 'Tag members, silent tag, tag admins, or delete messages' },
+        { cmd: '.mute / .unmute / .grouplink / .resetlink', desc: 'Lock group, get or reset invite link' },
+        { cmd: '.welcome / .goodbye on/off [msg]', desc: 'Custom welcome and goodbye messages with @variables' },
+        { cmd: '.setrules / .rules', desc: 'Set and display group rules' },
+        { cmd: '.nightmode on/off', desc: 'Auto-mute group at set time and unmute at wake time' },
+        { cmd: '.vip on/off/add/remove/list', desc: 'VIP-only mode - restrict messaging to VIPs and admins' },
+        { cmd: '.ghost on/off', desc: 'Ghost mode - no typing indicators or read receipts' },
+        { cmd: '.antilink / .antitoxic / .antiflood / .antiraid', desc: 'Auto-remove links, toxic messages, floods, or raid bots' },
+        { cmd: '.antiword / .antifwd / .antispam on/off', desc: 'Block bad words, forwards, or spam' },
+        { cmd: '.autokick / .autoreact / .autoreply / .autonudge', desc: 'Auto-kick, react, auto-reply, or nudge members' },
+        { cmd: '.groupinfo / .groupstats / .membercount / .topmembers', desc: 'Group analytics, stats, and top active members' }
+      ]},
+      { name: 'Auto Features', icon: '⚙️', commands: [
+        { cmd: '.autoonline / .autotyping / .autoread', desc: 'Always appear online, typing, or auto-read messages' },
+        { cmd: '.autoreply / .autostatus / .autobackup', desc: 'Auto-reply, save statuses, or backup chat data' },
+        { cmd: '.autoleave / .anticall / .antidelete', desc: 'Auto-leave groups, reject calls, catch deleted messages' },
+        { cmd: '.waprotect / .pmblocker', desc: 'Protect WhatsApp account and block non-contact DMs' },
+        { cmd: '.autoschedule add HH:MM <msg>', desc: 'Daily timed message scheduler - repeats every day' },
+        { cmd: '.autoforward set <src> <dst>', desc: 'Auto-forward messages between chats' },
+        { cmd: '.autopin on/off/keyword <word>', desc: 'Auto-pin admin messages or keyword-triggered messages' },
+        { cmd: '.autotranslate on <lang>', desc: 'Live-translate all incoming messages to target language' },
+        { cmd: '.autonuke on/off', desc: 'Spam destroyer - detects repeats and warns/kicks/mutes' },
+        { cmd: '.birthday add @user DD/MM', desc: 'Auto birthday wishes with custom messages per member' },
+        { cmd: '.autopollclose on/off', desc: 'Auto-close polls after set time and announce results' },
+        { cmd: '.autoquote on/off', desc: 'Human-like quote-reply moderator with custom triggers' },
+        { cmd: '.autosuggest on/off', desc: 'Fuzzy command suggestions using Levenshtein distance' }
+      ]},
+      { name: 'Stealth & Ghost', icon: '🥷', commands: [
+        { cmd: '.ghost on/off', desc: 'Ghost mode - no read receipts or typing indicators' },
+        { cmd: '.stealth on/off', desc: 'Maximum stealth mode - deeper than ghost, truly invisible' },
+        { cmd: '.stealth delay <min> <max>', desc: 'Set random response delay range for stealth' },
+        { cmd: '.stealth presence <mode>', desc: 'Set presence status while in stealth mode' }
       ]},
       { name: 'Premium Commands', icon: '💎', commands: [
-        { cmd: '.examprep <subject>', desc: 'Full exam revision with AI' },
+        { cmd: '.examprep <subject>', desc: 'Full AI exam revision with practice questions' },
         { cmd: '.code <lang> <task>', desc: 'Generate working code in any language' },
-        { cmd: '.remind <time> <msg>', desc: 'Set real reminders' },
-        { cmd: '.mystats', desc: 'Personal usage analytics' },
+        { cmd: '.remind <time> <msg>', desc: 'Set real smart reminders' },
+        { cmd: '.mystats', desc: 'Personal usage analytics dashboard' },
         { cmd: '.autostudy on <subject>', desc: 'Daily AI study tips delivered automatically' },
-        { cmd: '.setpersona <desc>', desc: 'Set a custom AI persona for the bot' }
+        { cmd: '.setpersona <desc>', desc: 'Set a custom AI persona for the bot' },
+        { cmd: '.upgrade', desc: 'Get Premium access' }
       ]},
       { name: 'Owner Commands', icon: '👑', commands: [
-        { cmd: '.broadcast <msg>', desc: 'Broadcast a message to all groups' },
-        { cmd: '.setpremium @user on/off', desc: 'Grant or revoke premium access' },
-        { cmd: '.botstats', desc: 'Full bot performance statistics' },
-        { cmd: '.antidelete on/off', desc: 'Anti-delete — resend deleted messages' },
+        { cmd: '.shutdown / .restart / .botstats', desc: 'Shutdown, restart bot, or view full server stats' },
+        { cmd: '.eval <code>', desc: 'Run JavaScript code on the bot server' },
+        { cmd: '.broadcast / .announce / .dmowner', desc: 'Broadcast to all groups, announce, or DM owner' },
+        { cmd: '.setpremium add/remove/list @user', desc: 'Grant or revoke premium access' },
+        { cmd: '.ban / .unban / .banlist / .cleardb', desc: 'Ban users, view ban list, or clear database' },
+        { cmd: '.setprefix / .setprofile / .setnick', desc: 'Change prefix, bot profile photo, or nickname' },
+        { cmd: '.listgroups / .joingroup / .leavegroup', desc: 'Manage which groups the bot is in' },
+        { cmd: '.ownerlist / .addowner / .removeowner', desc: 'Manage bot owner numbers' },
+        { cmd: '.maintenance on/off', desc: 'Enable maintenance mode - commands disabled for non-owners' },
+        { cmd: '.antidelete on/off', desc: 'Anti-delete - resend deleted messages' },
         { cmd: '.anticall on/off', desc: 'Auto-reject incoming calls' },
         { cmd: '.autoread on/off', desc: 'Auto-read all messages' },
         { cmd: '.pmblocker on/off', desc: 'Block non-contact DMs' },
-        { cmd: '.topmembers', desc: 'Show most active group members' },
-        { cmd: '.myactivity', desc: 'Your personal command activity log' }
+        { cmd: '.autoforward set/list/remove', desc: 'Manage auto-forward rules' },
+        { cmd: '.autoschedule add/list/remove', desc: 'Manage scheduled messages' },
+        { cmd: '.birthday add/list/remove', desc: 'Manage birthday wisher entries' },
+        { cmd: '.stealth on/off/status', desc: 'Maximum stealth mode control' }
+      ]},
+      { name: 'Guide & Download', icon: '📦', commands: [
+        { cmd: '.zip / .botzip / .guide', desc: 'Download full bot guide as a ZIP file (COMMANDS, SETUP, FEATURES, FAQ)' }
       ]}
     ]
   };

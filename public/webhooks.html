@@ -8,7 +8,7 @@
   :root { --bg:#0d0d1a; --card:#13132a; --card2:#1a1a35; --accent:#4f8ef7; --green:#2ecc71; --red:#e74c3c; --yellow:#f39c12; --text:#e0e0f0; --muted:#888aaa; --border:rgba(79,142,247,0.15); }
   * { margin:0; padding:0; box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font-family:'Segoe UI',sans-serif; min-height:100vh; }
-  .sidebar { position:fixed; left:0; top:0; bottom:0; width:220px; background:var(--card); border-right:1px solid var(--border); padding:24px 0; z-index:100; }
+  .sidebar { position:fixed; left:0; top:0; bottom:0; width:220px; background:var(--card); border-right:1px solid var(--border); padding:24px 0; z-index:100; overflow-y:auto; }
   .sidebar .logo { padding:0 20px 24px; font-size:1.2rem; font-weight:700; color:var(--accent); }
   .sidebar a { display:flex; align-items:center; gap:10px; padding:10px 20px; color:var(--muted); text-decoration:none; transition:.2s; font-size:.95rem; }
   .sidebar a:hover, .sidebar a.active { color:var(--text); background:rgba(79,142,247,.1); border-left:3px solid var(--accent); padding-left:17px; }
@@ -113,8 +113,8 @@
 </div>
 
 <script>
-const token = localStorage.getItem('token');
-if (!token) location.href = '/login';
+const token = localStorage.getItem('ns_token') || localStorage.getItem('token');
+if (!token) { location.href = '/login.html'; }
 
 async function api(path, method='GET', body=null) {
   const r = await fetch(path, { method, headers: { 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }, body: body ? JSON.stringify(body) : null });
