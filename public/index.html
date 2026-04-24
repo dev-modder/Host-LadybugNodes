@@ -73,9 +73,10 @@
 
     /* ── SIDEBAR ─────────────────────────────────────── */
     .sidebar {
-      width: var(--sidebar-w); min-height: 100vh; background: var(--panel);
+      width: var(--sidebar-w); height: 100vh; background: var(--panel);
       border-right: 1px solid var(--border); display: flex; flex-direction: column;
       position: fixed; top: 0; left: 0; z-index: 200; flex-shrink: 0;
+      overflow-y: auto;
     }
     .sidebar-logo {
       padding: 18px 16px 16px; border-bottom: 1px solid var(--border2);
