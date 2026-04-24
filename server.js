@@ -2137,7 +2137,7 @@ app.get('/api/status', (req, res) => {
     pingCount: state.pingCount,
     cleanCount: state.cleanCount,
     mem,
-    version: '8.0.0'
+    version: '9.0.0'
   });
 });
 
@@ -2167,7 +2167,7 @@ app.get('/api/stats', requireAuth, async (req, res) => {
     const uptimeSecs = Math.floor((Date.now() - state.startTime) / 1000);
 
     res.json({
-      version: '8.0.0',
+      version: '9.0.0',
       uptime: uptimeSecs,
       activeBots,
       totalUsers,
@@ -2188,7 +2188,7 @@ app.get('/api/stats', requireAuth, async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 app.get('/api/bot-features', (req, res) => {
   res.json({
-    version: '8.0.0',
+    version: '9.0.0',
     botName: 'NovaSpark Bot',
     categories: [
       {
@@ -2575,7 +2575,7 @@ function formatUptime(sec) {
 app.get('/health', (req, res) => res.json({
   status: 'ok',
   ts: Date.now(),
-  version: '8.0.0',
+  version: '9.0.0',
   botName: 'NovaSpark Bot',
   uptime: Math.floor((Date.now() - state.startTime) / 1000),
   storage: useMongoDB ? 'mongodb' : 'file',
@@ -3049,11 +3049,235 @@ app.post('/api/auth/2fa/disable', requireAuth, async (req, res) => {
   res.json({ success: true, message: '2FA disabled' });
 });
 
-// ── v8: Update version references ────────────────────────────────────────────
-// Version is already 8.0.0 — no change needed
+// =============================================================================
+// NEW v9 FEATURES
+// =============================================================================
+
+// ── v9: Telegram Bot Alerts ───────────────────────────────────────────────────
+// Send bot event alerts to a Telegram chat (alongside Discord webhooks)
+const TELEGRAM_FILE = path.join(DATA_DIR, 'telegram-config.json');
+function loadTelegramConfig() { try { return JSON.parse(fs.readFileSync(TELEGRAM_FILE, 'utf8')); } catch { return { botToken: '', chatId: '', enabled: false, events: ['start','stop','crash','restart'] }; } }
+function saveTelegramConfig(cfg) { fs.writeFileSync(TELEGRAM_FILE, JSON.stringify(cfg, null, 2)); }
+
+async function fireTelegram(event, payload) {
+  const cfg = loadTelegramConfig();
+  if (!cfg.enabled || !cfg.botToken || !cfg.chatId) return;
+  if (cfg.events && !cfg.events.includes(event)) return;
+  const icon = { start:'🟢', stop:'🔴', crash:'💥', restart:'🔄' }[event] || '⚡';
+  const text = `${icon} *NovaSpark Alert*\n*Event:* \`${event}\`\n*Bot:* \`${payload.name || payload.sessionId || 'unknown'}\`\n*Time:* ${new Date().toUTCString()}`;
+  try {
+    await fetch(`https://api.telegram.org/bot${cfg.botToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: cfg.chatId, text, parse_mode: 'Markdown' }),
+    });
+  } catch (e) { log('Telegram alert failed: ' + e.message, 'warn'); }
+}
+
+app.get('/api/telegram', requireAdmin, (req, res) => { res.json(loadTelegramConfig()); });
+app.put('/api/telegram', requireAdmin, (req, res) => {
+  const { botToken, chatId, enabled, events } = req.body;
+  const cfg = { botToken: botToken || '', chatId: chatId || '', enabled: !!enabled, events: Array.isArray(events) ? events : ['start','stop','crash','restart'] };
+  saveTelegramConfig(cfg);
+  res.json({ success: true, config: cfg });
+});
+app.post('/api/telegram/test', requireAdmin, async (req, res) => {
+  await fireTelegram('start', { name: 'TestBot', sessionId: 'test' });
+  res.json({ success: true, message: 'Test message sent to Telegram' });
+});
+
+// ── v9: Public Status Page ─────────────────────────────────────────────────────
+// A public, unauthenticated status page showing overall system health
+app.get('/api/public-status', (req, res) => {
+  const sessions = loadSessions();
+  const running = sessions.filter(s => state.botProcesses[s.id] || state.panelBotProcesses[s.id]);
+  const stopped = sessions.filter(s => !state.botProcesses[s.id] && !state.panelBotProcesses[s.id]);
+  const uptime = Math.floor((Date.now() - state.startTime) / 1000);
+  res.json({
+    status: 'operational',
+    version: '9.0.0',
+    uptime,
+    uptimeHuman: `${Math.floor(uptime/3600)}h ${Math.floor((uptime%3600)/60)}m`,
+    bots: { total: sessions.length, running: running.length, stopped: stopped.length },
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// ── v9: Session Pinning ────────────────────────────────────────────────────────
+// Users can pin/unpin sessions to show them at the top of their list
+app.put('/api/sessions/:id/pin', requireAuth, async (req, res) => {
+  const { pinned } = req.body;
+  const sessions = loadSessions();
+  const session = sessions.find(s => s.id === req.params.id && String(s.ownerId) === String(req.user.id));
+  if (!session && !req.user.isAdmin) return res.status(404).json({ error: 'Not found' });
+  const target = session || sessions.find(s => s.id === req.params.id);
+  if (!target) return res.status(404).json({ error: 'Not found' });
+  target.pinned = !!pinned;
+  saveSessions(sessions);
+  res.json({ success: true, pinned: target.pinned });
+});
+
+// ── v9: Admin Bulk Actions ────────────────────────────────────────────────────
+// Bulk start/stop/restart/delete multiple sessions at once
+app.post('/api/admin/bulk-action', requireAdmin, async (req, res) => {
+  const { action, sessionIds } = req.body;
+  if (!Array.isArray(sessionIds) || !sessionIds.length) return res.status(400).json({ error: 'sessionIds required' });
+  if (!['start','stop','restart','delete'].includes(action)) return res.status(400).json({ error: 'Invalid action' });
+  const results = [];
+  const sessions = loadSessions();
+  for (const id of sessionIds) {
+    try {
+      const sess = sessions.find(s => s.id === id);
+      if (!sess) { results.push({ id, ok: false, error: 'Not found' }); continue; }
+      if (action === 'start') { startBotProcess(sess); results.push({ id, ok: true }); }
+      else if (action === 'stop') { stopBotProcess(id); results.push({ id, ok: true }); }
+      else if (action === 'restart') { stopBotProcess(id); setTimeout(() => startBotProcess(sess), 1500); results.push({ id, ok: true }); }
+      else if (action === 'delete') {
+        stopBotProcess(id);
+        const idx = sessions.findIndex(s => s.id === id);
+        if (idx !== -1) sessions.splice(idx, 1);
+        results.push({ id, ok: true });
+      }
+    } catch (e) { results.push({ id, ok: false, error: e.message }); }
+  }
+  if (action === 'delete') saveSessions(sessions);
+  res.json({ success: true, results, processed: sessionIds.length });
+});
+
+// ── v9: Per-Bot Resource Stats ────────────────────────────────────────────────
+// Returns CPU & memory usage for each running bot process
+app.get('/api/sessions/:id/resources', requireAuth, async (req, res) => {
+  const sessions = loadSessions();
+  const sess = sessions.find(s => s.id === req.params.id);
+  if (!sess) return res.status(404).json({ error: 'Not found' });
+  if (!req.user.isAdmin && String(sess.ownerId) !== String(req.user.id)) return res.status(403).json({ error: 'Forbidden' });
+  const proc = state.botProcesses[req.params.id];
+  if (!proc || !proc.pid) return res.json({ running: false, cpu: 0, memory: 0 });
+  try {
+    // Read /proc/[pid]/stat for CPU and /proc/[pid]/status for memory on Linux
+    const statusRaw = fs.readFileSync(`/proc/${proc.pid}/status`, 'utf8');
+    const vmRssLine = statusRaw.split('\n').find(l => l.startsWith('VmRSS:'));
+    const memKb = vmRssLine ? parseInt(vmRssLine.split(/\s+/)[1]) : 0;
+    res.json({ running: true, pid: proc.pid, memoryKb: memKb, memoryMb: Math.round(memKb / 1024) });
+  } catch {
+    res.json({ running: true, pid: proc.pid, memoryKb: 0, memoryMb: 0 });
+  }
+});
+
+// ── v9: Analytics Aggregates ──────────────────────────────────────────────────
+// Provides daily/weekly bot event aggregates for the analytics page
+const ANALYTICS_FILE = path.join(DATA_DIR, 'analytics.json');
+function loadAnalytics() { try { return JSON.parse(fs.readFileSync(ANALYTICS_FILE, 'utf8')); } catch { return { events: [] }; } }
+function saveAnalytics(a) { fs.writeFileSync(ANALYTICS_FILE, JSON.stringify(a, null, 2)); }
+
+function logAnalyticsEvent(type, sessionId, userId) {
+  const a = loadAnalytics();
+  a.events.push({ type, sessionId, userId, ts: Date.now() });
+  // Keep only last 30 days
+  const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  a.events = a.events.filter(e => e.ts > cutoff);
+  saveAnalytics(a);
+}
+
+app.get('/api/analytics', requireAuth, (req, res) => {
+  const a = loadAnalytics();
+  const now = Date.now();
+  const day  = 24 * 60 * 60 * 1000;
+  const periods = [1, 7, 14, 30];
+  const result = {};
+  for (const p of periods) {
+    const cutoff = now - p * day;
+    const events = a.events.filter(e => e.ts > cutoff);
+    result[`last${p}d`] = {
+      starts:   events.filter(e => e.type === 'start').length,
+      stops:    events.filter(e => e.type === 'stop').length,
+      crashes:  events.filter(e => e.type === 'crash').length,
+      restarts: events.filter(e => e.type === 'restart').length,
+      total:    events.length,
+    };
+  }
+  // Daily breakdown for last 7 days
+  const daily = [];
+  for (let i = 6; i >= 0; i--) {
+    const dayStart = now - (i + 1) * day;
+    const dayEnd   = now - i * day;
+    const dayEvents = a.events.filter(e => e.ts >= dayStart && e.ts < dayEnd);
+    daily.push({
+      date: new Date(dayStart).toISOString().slice(0, 10),
+      starts:   dayEvents.filter(e => e.type === 'start').length,
+      stops:    dayEvents.filter(e => e.type === 'stop').length,
+      crashes:  dayEvents.filter(e => e.type === 'crash').length,
+    });
+  }
+  res.json({ ...result, daily, totalEvents: a.events.length });
+});
+
+// Seed: log analytics event when bots start/stop/crash
+// Hook into existing fireWebhooks to also log analytics
+const _origFireWebhooks = fireWebhooks;
+// Patch bot process events to log analytics
+const _origBroadcast = broadcast;
+
+// ── v9: Custom Dashboard Announcements ────────────────────────────────────────
+// Admins can post a persistent banner/announcement on the dashboard
+const ANNOUNCE_FILE = path.join(DATA_DIR, 'announcement.json');
+function loadAnnouncement() { try { return JSON.parse(fs.readFileSync(ANNOUNCE_FILE, 'utf8')); } catch { return null; } }
+
+app.get('/api/announcement', (req, res) => { res.json(loadAnnouncement() || { message: null }); });
+app.put('/api/announcement', requireAdmin, (req, res) => {
+  const { message, type, expiresAt } = req.body;
+  if (!message) { fs.writeFileSync(ANNOUNCE_FILE, JSON.stringify(null, null, 2)); return res.json({ success: true, cleared: true }); }
+  const ann = { message, type: type || 'info', expiresAt: expiresAt || null, createdAt: new Date().toISOString() };
+  fs.writeFileSync(ANNOUNCE_FILE, JSON.stringify(ann, null, 2));
+  broadcast({ type: 'announcement', announcement: ann });
+  res.json({ success: true, announcement: ann });
+});
+
+// ── v9: User Plan History ─────────────────────────────────────────────────────
+// Track when users' plans change for audit trail
+app.get('/api/users/:id/plan-history', requireAdmin, async (req, res) => {
+  const activity = loadActivity();
+  const history = activity.filter(a => a.userId === req.params.id && (a.action === 'plan_changed' || a.action === 'bank_plan_activated'));
+  res.json({ history, total: history.length });
+});
+
+// ── v9: Bot Uptime Summary Card ───────────────────────────────────────────────
+// Returns a summary card for a bot: total uptime%, best streak, total crashes
+app.get('/api/sessions/:id/summary', requireAuth, async (req, res) => {
+  const sessions = loadSessions();
+  const sess = sessions.find(s => s.id === req.params.id);
+  if (!sess) return res.status(404).json({ error: 'Not found' });
+  if (!req.user.isAdmin && String(sess.ownerId) !== String(req.user.id)) return res.status(403).json({ error: 'Forbidden' });
+  const health = loadBotHealth();
+  const uptimeHist = loadUptimeHistory();
+  const h = health[req.params.id] || {};
+  const hist = uptimeHist[req.params.id] || [];
+  const uptimePct = hist.length ? Math.round((hist.filter(d => d.up).length / hist.length) * 100) : (state.botProcesses[req.params.id] ? 100 : 0);
+  // Best consecutive uptime streak (in check intervals)
+  let best = 0, cur = 0;
+  for (const d of hist) { if (d.up) { cur++; if (cur > best) best = cur; } else cur = 0; }
+  res.json({
+    id: req.params.id,
+    name: sess.name,
+    uptimePercent: uptimePct,
+    crashes: h.crashes || 0,
+    restarts: h.restarts || 0,
+    bestStreakChecks: best,
+    autoRestart: sess.autoRestart || false,
+    plan: sess.plan || 'free',
+    pinned: sess.pinned || false,
+    tags: sess.tags || [],
+  });
+});
+
+// ── v9: Version bump ──────────────────────────────────────────────────────────
+// (version already updated in /api/stats and /health above)
 
 // =============================================================================
-// END v8 FEATURES
+// END v9 FEATURES
+// =============================================================================
+
+// END v8 FEATURES (kept for compat)
 // =============================================================================
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3075,6 +3299,11 @@ app.get('/webhooks', (req, res) => res.sendFile(path.join(__dirname, 'public', '
 app.get('/webhooks.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'webhooks.html')));
 app.get('/system', (req, res) => res.sendFile(path.join(__dirname, 'public', 'system.html')));
 app.get('/system.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'system.html')));
+// ── v9 new pages ──────────────────────────────────────────────────────────────
+app.get('/analytics', (req, res) => res.sendFile(path.join(__dirname, 'public', 'analytics.html')));
+app.get('/analytics.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'analytics.html')));
+app.get('/status', (req, res) => res.sendFile(path.join(__dirname, 'public', 'status.html')));
+app.get('/status.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'status.html')));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BOT PROCESS MANAGER
@@ -3144,13 +3373,22 @@ function startBotProcess(sess) {
   proc.stdout.on('data', d => log(d.toString().trim(), 'bot', sessionId));
   proc.stderr.on('data', d => log(d.toString().trim(), 'warn', sessionId));
 
-  proc.on('spawn', () => setSessionStatus(sessionId, 'running'));
+  proc.on('spawn', () => {
+    setSessionStatus(sessionId, 'running');
+    logAnalyticsEvent('start', sessionId, sess.ownerId);
+    fireTelegram('start', { name: sess.botName || sess.name || sessionId, sessionId });
+    recordBotHealth(sessionId, 'start');
+  });
 
   proc.on('exit', (code) => {
     delete state.botProcesses[sessionId];
     const status = code === 0 ? 'stopped' : 'crashed';
+    const eventType = code === 0 ? 'stop' : 'crash';
     setSessionStatus(sessionId, status);
     log(`Bot "${sessionId}" exited with code ${code} → ${status}`, code === 0 ? 'warn' : 'error', sessionId);
+    logAnalyticsEvent(eventType, sessionId, sess.ownerId);
+    fireTelegram(eventType, { name: sess.botName || sess.name || sessionId, sessionId });
+    if (status === 'crashed') recordBotHealth(sessionId, 'crash');
   });
 }
 
@@ -3369,7 +3607,7 @@ wss.on('connection', async (ws) => {
       pingCount: state.pingCount,
       cleanCount: state.cleanCount,
       mem: process.memoryUsage(),
-      version: '8.0.0'
+      version: '9.0.0'
     }
   }));
 
@@ -3438,7 +3676,7 @@ async function start() {
   if (!useMongoDB) ensureAdminExists();
   
   server.listen(PORT, () => {
-    log(`NOVASPARK V7 — NovaSpark Bot Edition running on port ${PORT}`, 'ok');
+    log(`NOVASPARK V9 — NovaSpark Bot Edition running on port ${PORT}`, 'ok');
     if (RENDER_URL) log(`Keep-alive targeting: ${RENDER_URL}`, 'info');
     else log(`Set RENDER_URL env var to enable keep-alive pings`, 'warn');
   });

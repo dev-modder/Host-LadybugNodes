@@ -1,28 +1,24 @@
-# ⚡ NOVASPARK V7
+# ⚡ NOVASPARK V9
 
-**Version:** 7.0.0  
+**Version:** 9.0.0
 **Developer:** [Dev-Ntando](https://github.com/dev-modder)
 
-A powerful, hardened multi-host dashboard for running multiple WhatsApp bots on Render.com. Features a full JWT auth system, coin economy, admin panel, custom bot upload, live server stats, animated UI, security hardening, leaderboard, in-app notifications, user profiles, and much more.
+A powerful, hardened multi-host dashboard for running multiple WhatsApp bots on Render.com. Features a full JWT auth system, coin economy, admin panel, custom bot upload, live server stats, animated UI, security hardening, leaderboard, in-app notifications, user profiles, analytics, Telegram alerts, public status page, session pinning, bulk admin actions, and much more.
 
 ---
 
-## ✨ What's New in v7.0.0
+## ✨ What's New in v9.0.0
 
-- **🐛 Session Bug Fixes** — All `ownerId` comparisons now use `String()` normalisation so MongoDB ObjectId vs string mismatches can no longer silently block session access
-- **🔀 RESTful Session Routes** — New `POST /api/sessions/:id/start`, `POST /api/sessions/:id/stop`, `POST /api/sessions/:id/restart`, `GET /api/sessions/:id/logs`, `GET /api/sessions/:id` routes (no more body-param-only `/api/bot/start`)
-- **📣 Admin Broadcast** — `POST /api/admin/broadcast` to push notifications to one user or all users at once
-- **🔍 User Search** — `GET /api/users/search?q=` for admins to search users by username or referral code
-- **📊 Bot Metrics** — `GET /api/admin/bot-metrics` shows running bot counts, uptime, ping count
-- **🛑 Emergency Stop All** — `POST /api/admin/stop-all` kills every running bot instantly
-- **📋 Full Log Viewer** — `GET /api/admin/logs?level=&sessionId=` returns filtered log buffer
-- **🚀 Startup Order Fix** — `ensureAdminExists()` now runs only after MongoDB connection is resolved, preventing race conditions on cold starts
-- **⚡ SIGINT Handler** — Ctrl+C / container stop now triggers graceful 1.5s shutdown (same as SIGTERM)
-- **🛡️ Uncaught Exception Handler** — `uncaughtException` and `unhandledRejection` no longer crash the process
-- **🏥 Enhanced `/health`** — Now returns storage mode, active bot count, and uptime seconds
-- **📦 render.yaml** — Added `healthCheckPath: /health` for Render health monitoring
-
----
+- **📈 Analytics Dashboard** — New `/analytics` page with daily/weekly/monthly bot event breakdowns, interactive bar charts, KPI cards (starts, stops, crashes, restarts), and a 7-day daily table with health indicators
+- **📣 Telegram Bot Alerts** — Send bot start/stop/crash/restart alerts to a Telegram chat (`/api/telegram` configure endpoint). Works alongside Discord webhooks
+- **🌐 Public Status Page** — A public, unauthenticated `/status` page showing system health, uptime, active bot count, and version — share with your users
+- **📌 Session Pinning** — Pin important bot sessions to the top of your list (`PUT /api/sessions/:id/pin`)
+- **⚡ Admin Bulk Actions** — Start, stop, restart, or delete multiple sessions at once (`POST /api/admin/bulk-action`)
+- **📊 Per-Bot Resource Stats** — Check RAM usage per running bot process (`GET /api/sessions/:id/resources`)
+- **📢 Dashboard Announcements** — Admins can post a live banner/announcement visible to all users on the dashboard (`PUT /api/announcement`)
+- **📋 Bot Uptime Summary Card** — Quick summary of uptime %, crashes, restarts, best streak per bot (`GET /api/sessions/:id/summary`)
+- **📅 User Plan History** — Audit trail of plan changes per user (`GET /api/users/:id/plan-history`)
+- **🔢 Version bumped** to `9.0.0`
 
 ## ✨ What's New in v6.0.0
 

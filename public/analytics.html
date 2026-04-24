@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en" data-v5-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NOVASPARK V9 · Analytics</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#0a0d14; --panel:#111827; --panel2:#1a2235; --panel3:#1f2a3d;
+      --border:#1f2d42; --border2:#172032; --accent:#2563eb; --accent2:#3b82f6;
+      --green:#3fb950; --red:#f85149; --amber:#d29922; --blue:#58a6ff;
+      --cyan:#39c5cf; --purple:#bc8cff; --gold:#e3b341;
+      --text:#e6edf3; --text-dim:#8b949e; --text-muted:#484f58;
+      --mono:'JetBrains Mono',monospace; --sans:'Inter',sans-serif;
+      --radius:8px; --sidebar-w:220px;
+    }
+    html { height:100%; } body { background:var(--bg); color:var(--text); font-family:var(--sans); min-height:100vh; display:flex; }
+    @keyframes fadeSlideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    .page-animate{animation:fadeSlideUp 0.5s cubic-bezier(0.16,1,0.3,1) both;}
+    /* Sidebar */
+    .sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100;}
+    .sidebar-logo{display:flex;align-items:center;gap:10px;padding:20px 16px 16px;border-bottom:1px solid var(--border);}
+    .sidebar-logo-icon{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+    .sidebar-logo-text{font-weight:700;font-size:14px;letter-spacing:0.5px;}
+    .sidebar-logo-text span{color:var(--accent);}
+    .sidebar-logo-badge{font-size:10px;background:var(--panel2);border:1px solid var(--border);padding:1px 6px;border-radius:4px;color:var(--text-dim);}
+    .sidebar-section{padding:12px 8px 4px;}
+    .sidebar-section-label{font-size:10px;font-weight:600;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;padding:0 8px;margin-bottom:4px;}
+    .nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;color:var(--text-dim);text-decoration:none;font-size:13px;font-weight:500;cursor:pointer;transition:background 0.15s,color 0.15s;}
+    .nav-item:hover,.nav-item.active{background:var(--panel2);color:var(--text);}
+    .nav-item.active{background:rgba(37,99,235,0.15);color:var(--accent2);border-left:2px solid var(--accent);}
+    .nav-item-icon{font-size:14px;flex-shrink:0;}
+    .sidebar-footer{margin-top:auto;padding:12px 12px 16px;border-top:1px solid var(--border);}
+    .user-pill{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--panel2);border-radius:8px;margin-bottom:8px;}
+    .user-pill-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;}
+    .user-pill-name{font-size:12px;font-weight:600;}
+    .user-pill-role{font-size:10px;color:var(--text-dim);}
+    /* Main */
+    .main-content{margin-left:var(--sidebar-w);flex:1;padding:28px 32px;max-width:1200px;}
+    .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+    .breadcrumb{font-size:13px;color:var(--text-dim);}
+    .breadcrumb span{color:var(--text);}
+    h1{font-size:22px;font-weight:700;margin-bottom:4px;}
+    .page-sub{font-size:13px;color:var(--text-dim);}
+    /* Cards */
+    .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+    .stat-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px 20px;}
+    .stat-card-label{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;}
+    .stat-card-value{font-size:28px;font-weight:700;font-family:var(--mono);line-height:1;}
+    .stat-card-sub{font-size:11px;color:var(--text-dim);margin-top:4px;}
+    /* Chart area */
+    .chart-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin-bottom:24px;}
+    .chart-title{font-size:14px;font-weight:600;margin-bottom:4px;}
+    .chart-sub{font-size:12px;color:var(--text-dim);margin-bottom:16px;}
+    .chart-wrap{position:relative;height:200px;width:100%;}
+    canvas{display:block;}
+    /* Period selector */
+    .period-btns{display:flex;gap:6px;margin-bottom:16px;}
+    .period-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--panel2);color:var(--text-dim);font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;}
+    .period-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+    /* Event breakdown */
+    .event-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;}
+    .event-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;}
+    .event-label{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;}
+    .event-val{font-size:22px;font-weight:700;font-family:var(--mono);}
+    .event-val.green{color:var(--green);}
+    .event-val.red{color:var(--red);}
+    .event-val.amber{color:var(--amber);}
+    /* Table */
+    .table-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:24px;}
+    .table-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+    .table-title{font-size:14px;font-weight:600;}
+    table{width:100%;border-collapse:collapse;}
+    th{padding:10px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;border-bottom:1px solid var(--border);}
+    td{padding:10px 16px;font-size:13px;border-bottom:1px solid var(--border2);}
+    tr:last-child td{border-bottom:none;}
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+    .badge.green{background:rgba(63,185,80,0.12);color:var(--green);}
+    .badge.red{background:rgba(248,81,73,0.12);color:var(--red);}
+    .badge.amber{background:rgba(210,153,34,0.12);color:var(--amber);}
+    /* Bar chart custom */
+    .bar-chart{display:flex;align-items:flex-end;gap:8px;height:180px;padding:0 4px;}
+    .bar-group{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+    .bar-stack{display:flex;flex-direction:column;justify-content:flex-end;width:100%;flex:1;gap:2px;}
+    .bar-seg{width:100%;border-radius:3px 3px 0 0;min-height:2px;transition:height 0.6s cubic-bezier(0.4,0,0.2,1);}
+    .bar-seg.starts{background:var(--green);}
+    .bar-seg.crashes{background:var(--red);}
+    .bar-seg.stops{background:var(--amber);}
+    .bar-date{font-size:10px;color:var(--text-muted);text-align:center;white-space:nowrap;margin-top:4px;}
+    .legend{display:flex;gap:16px;margin-bottom:12px;}
+    .legend-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-dim);}
+    .legend-dot{width:8px;height:8px;border-radius:50%;}
+    @media(max-width:700px){:root{--sidebar-w:0}.sidebar{display:none}.main-content{margin-left:0}.stat-grid{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">⚡</div>
+      <div>
+        <div class="sidebar-logo-text">NOVA<span>SPARK</span></div>
+        <span class="sidebar-logo-badge">V9.0.0</span>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Main</div>
+      <a href="/" class="nav-item"><span class="nav-item-icon">📊</span> Dashboard</a>
+      <a href="/panel-bots.html" class="nav-item"><span class="nav-item-icon">🤖</span> Panel Bots</a>
+      <a href="/health-monitor.html" class="nav-item"><span class="nav-item-icon">🏥</span> Health Monitor</a>
+      <a href="/analytics.html" class="nav-item active"><span class="nav-item-icon">📈</span> Analytics</a>
+      <a href="/bot-features.html" class="nav-item"><span class="nav-item-icon">⚙️</span> Bot Features</a>
+      <a href="/leaderboard.html" class="nav-item"><span class="nav-item-icon">🏆</span> Leaderboard</a>
+      <a href="/notifications.html" class="nav-item"><span class="nav-item-icon">🔔</span> Notifications</a>
+      <a href="/webhooks.html" class="nav-item"><span class="nav-item-icon">🔗</span> Webhooks</a>
+      <a href="/system.html" class="nav-item"><span class="nav-item-icon">🖥️</span> System</a>
+      <a href="/profile.html" class="nav-item"><span class="nav-item-icon">👤</span> Profile</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Account</div>
+      <div class="nav-item" onclick="openUpgradeModal()"><span class="nav-item-icon">⬆</span> Upgrade Plan</div>
+      <a class="nav-item" href="/bank.html"><span class="nav-item-icon">🏦</span> Nodes Bank</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Admin</div>
+      <div class="nav-item" id="admin-btn" style="display:none" onclick="location.href='/'"><span class="nav-item-icon">⚙️</span> Admin Panel</div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="user-pill-avatar">👤</div>
+        <div>
+          <div class="user-pill-name" id="user-name">—</div>
+          <div class="user-pill-role" id="user-role">—</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content page-animate">
+    <div class="page-header">
+      <div>
+        <div class="breadcrumb">NOVASPARK / <span>Analytics</span></div>
+        <h1>📈 Analytics</h1>
+        <div class="page-sub">Bot event breakdown and activity trends — last 30 days</div>
+      </div>
+      <div class="period-btns">
+        <button class="period-btn active" onclick="setPeriod(1)">24h</button>
+        <button class="period-btn" onclick="setPeriod(7)">7d</button>
+        <button class="period-btn" onclick="setPeriod(14)">14d</button>
+        <button class="period-btn" onclick="setPeriod(30)">30d</button>
+      </div>
+    </div>
+
+    <!-- KPI cards -->
+    <div class="stat-grid" id="kpi-grid">
+      <div class="stat-card"><div class="stat-card-label">Bot Starts</div><div class="stat-card-value green" id="kpi-starts">—</div><div class="stat-card-sub">in period</div></div>
+      <div class="stat-card"><div class="stat-card-label">Bot Stops</div><div class="stat-card-value amber" id="kpi-stops">—</div><div class="stat-card-sub">in period</div></div>
+      <div class="stat-card"><div class="stat-card-label">Crashes</div><div class="stat-card-value red" id="kpi-crashes">—</div><div class="stat-card-sub">in period</div></div>
+      <div class="stat-card"><div class="stat-card-label">Restarts</div><div class="stat-card-value" id="kpi-restarts" style="color:var(--blue)">—</div><div class="stat-card-sub">in period</div></div>
+    </div>
+
+    <!-- Bar chart: last 7 days -->
+    <div class="chart-card">
+      <div class="chart-title">Daily Activity — Last 7 Days</div>
+      <div class="chart-sub">Bot starts, stops, and crashes per day</div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Starts</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div> Crashes</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div> Stops</div>
+      </div>
+      <div class="bar-chart" id="bar-chart"></div>
+    </div>
+
+    <!-- Event breakdown table -->
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">Daily Breakdown</div>
+        <div style="font-size:12px;color:var(--text-dim)">Last 7 days</div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Starts</th>
+            <th>Stops</th>
+            <th>Crashes</th>
+            <th>Health</th>
+          </tr>
+        </thead>
+        <tbody id="daily-table"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    const TOKEN = localStorage.getItem('novaspark_token');
+    if (!TOKEN) location.href = '/login';
+    let currentPeriod = 1;
+    let analyticsData = null;
+
+    async function loadAnalytics() {
+      try {
+        const r = await fetch('/api/analytics', { headers: { Authorization: 'Bearer ' + TOKEN } });
+        if (r.status === 401 || r.status === 403) { location.href = '/login'; return; }
+        analyticsData = await r.json();
+        renderPeriod(currentPeriod);
+        renderBarChart(analyticsData.daily || []);
+        renderDailyTable(analyticsData.daily || []);
+      } catch (e) { console.error(e); }
+    }
+
+    async function loadUser() {
+      try {
+        const r = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + TOKEN } });
+        if (!r.ok) return;
+        const u = await r.json();
+        document.getElementById('user-name').textContent = u.username || '—';
+        document.getElementById('user-role').textContent = u.role || 'user';
+        if (u.role === 'admin') document.getElementById('admin-btn').style.display = 'flex';
+      } catch {}
+    }
+
+    function setPeriod(p) {
+      currentPeriod = p;
+      document.querySelectorAll('.period-btn').forEach((b, i) => b.classList.toggle('active', [1,7,14,30][i] === p));
+      if (analyticsData) renderPeriod(p);
+    }
+
+    function renderPeriod(p) {
+      const key = `last${p}d`;
+      const d = analyticsData[key] || {};
+      document.getElementById('kpi-starts').textContent   = d.starts   ?? '0';
+      document.getElementById('kpi-stops').textContent    = d.stops    ?? '0';
+      document.getElementById('kpi-crashes').textContent  = d.crashes  ?? '0';
+      document.getElementById('kpi-restarts').textContent = d.restarts ?? '0';
+    }
+
+    function renderBarChart(daily) {
+      const chart = document.getElementById('bar-chart');
+      if (!daily.length) { chart.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:20px">No data yet — bot events will appear here.</div>'; return; }
+      const max = Math.max(...daily.map(d => (d.starts || 0) + (d.crashes || 0) + (d.stops || 0)), 1);
+      chart.innerHTML = daily.map(d => {
+        const total = (d.starts||0) + (d.crashes||0) + (d.stops||0);
+        const heightPct = Math.round((total / max) * 100);
+        const sH = Math.round(((d.starts||0)  / max) * 160);
+        const cH = Math.round(((d.crashes||0) / max) * 160);
+        const stH = Math.round(((d.stops||0)  / max) * 160);
+        const label = d.date ? d.date.slice(5) : '';
+        return `<div class="bar-group">
+          <div class="bar-stack" style="height:160px">
+            <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:2px">
+              ${d.starts  ? `<div class="bar-seg starts"  style="height:${sH}px"  title="Starts: ${d.starts}"></div>` : ''}
+              ${d.crashes ? `<div class="bar-seg crashes" style="height:${cH}px"  title="Crashes: ${d.crashes}"></div>` : ''}
+              ${d.stops   ? `<div class="bar-seg stops"   style="height:${stH}px" title="Stops: ${d.stops}"></div>` : ''}
+              ${!total    ? `<div class="bar-seg" style="height:4px;background:var(--border2)"></div>` : ''}
+            </div>
+          </div>
+          <div class="bar-date">${label}</div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderDailyTable(daily) {
+      const tbody = document.getElementById('daily-table');
+      if (!daily.length) { tbody.innerHTML = '<tr><td colspan="5" style="color:var(--text-muted);text-align:center;padding:24px">No events recorded yet.</td></tr>'; return; }
+      tbody.innerHTML = [...daily].reverse().map(d => {
+        const health = d.crashes === 0 ? '<span class="badge green">✓ Clean</span>' : `<span class="badge red">⚠ ${d.crashes} crash${d.crashes>1?'es':''}</span>`;
+        return `<tr>
+          <td style="font-family:var(--mono);font-size:12px">${d.date}</td>
+          <td><span class="badge green">${d.starts||0}</span></td>
+          <td><span class="badge amber">${d.stops||0}</span></td>
+          <td style="color:${d.crashes?'var(--red)':'var(--text-dim)'}">${d.crashes||0}</td>
+          <td>${health}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    loadUser();
+    loadAnalytics();
+    setInterval(loadAnalytics, 60000);
+  </script>
+</body>
+</html>

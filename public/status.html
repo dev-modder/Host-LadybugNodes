@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NOVASPARK · System Status</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#0a0d14;--panel:#111827;--border:#1f2d42;--accent:#2563eb;--green:#3fb950;--red:#f85149;--amber:#d29922;--text:#e6edf3;--text-dim:#8b949e;--mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif}
+    body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:60px 20px}
+    .logo{display:flex;align-items:center;gap:10px;margin-bottom:40px}
+    .logo-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:22px}
+    .logo-text{font-size:24px;font-weight:700;letter-spacing:0.5px}
+    .logo-text span{color:#3b82f6}
+    .status-banner{width:100%;max-width:640px;padding:18px 24px;border-radius:12px;display:flex;align-items:center;gap:12px;font-size:15px;font-weight:600;margin-bottom:32px}
+    .status-banner.operational{background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.3);color:var(--green)}
+    .status-banner.degraded{background:rgba(210,153,34,0.1);border:1px solid rgba(210,153,34,0.3);color:var(--amber)}
+    .pulse{width:10px;height:10px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 currentColor}70%{opacity:0.7;box-shadow:0 0 0 6px transparent}}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;width:100%;max-width:640px;padding:24px;margin-bottom:16px}
+    .card-title{font-size:13px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:16px}
+    .metric-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(31,45,66,0.5)}
+    .metric-row:last-child{border-bottom:none}
+    .metric-label{font-size:13px;color:var(--text-dim)}
+    .metric-val{font-size:14px;font-weight:600;font-family:var(--mono)}
+    .footer{margin-top:40px;font-size:12px;color:var(--text-dim);text-align:center}
+    .footer a{color:var(--accent);text-decoration:none}
+    .refresh-note{font-size:11px;color:var(--text-dim);text-align:center;margin-bottom:24px}
+  </style>
+</head>
+<body>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div class="logo-text">NOVA<span>SPARK</span></div>
+  </div>
+
+  <div id="status-banner" class="status-banner operational">
+    <div class="pulse"></div>
+    <span id="status-text">Checking system status…</span>
+  </div>
+
+  <div class="refresh-note">Auto-refreshes every 30 seconds</div>
+
+  <div class="card">
+    <div class="card-title">System Metrics</div>
+    <div class="metric-row"><span class="metric-label">Status</span><span class="metric-val" id="m-status">—</span></div>
+    <div class="metric-row"><span class="metric-label">Version</span><span class="metric-val" id="m-version">—</span></div>
+    <div class="metric-row"><span class="metric-label">Uptime</span><span class="metric-val" id="m-uptime">—</span></div>
+    <div class="metric-row"><span class="metric-label">Running Bots</span><span class="metric-val" id="m-running">—</span></div>
+    <div class="metric-row"><span class="metric-label">Total Sessions</span><span class="metric-val" id="m-total">—</span></div>
+    <div class="metric-row"><span class="metric-label">Last Checked</span><span class="metric-val" id="m-checked">—</span></div>
+  </div>
+
+  <div class="footer">
+    Powered by <a href="/">NovaSpark V9</a> · <a href="/login">Sign in</a>
+  </div>
+
+  <script>
+    async function loadStatus() {
+      try {
+        const r = await fetch('/api/public-status');
+        const d = await r.json();
+        document.getElementById('m-status').textContent    = d.status || '—';
+        document.getElementById('m-version').textContent   = 'v' + (d.version || '—');
+        document.getElementById('m-uptime').textContent    = d.uptimeHuman || '—';
+        document.getElementById('m-running').textContent   = d.bots?.running ?? '—';
+        document.getElementById('m-total').textContent     = d.bots?.total   ?? '—';
+        document.getElementById('m-checked').textContent   = new Date().toLocaleTimeString();
+        const banner = document.getElementById('status-banner');
+        const txt    = document.getElementById('status-text');
+        if (d.status === 'operational') {
+          banner.className = 'status-banner operational';
+          txt.textContent  = '✓ All systems operational';
+        } else {
+          banner.className = 'status-banner degraded';
+          txt.textContent  = '⚠ System degraded';
+        }
+      } catch {
+        document.getElementById('status-text').textContent = '✗ Unable to reach server';
+      }
+    }
+    loadStatus();
+    setInterval(loadStatus, 30000);
+  </script>
+</body>
+</html>

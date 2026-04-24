@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NOVASPARK V8 · Dashboard</title>
+  <title>NOVASPARK V9 · Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -568,7 +568,7 @@
       <div class="sidebar-logo-icon">⚡</div>
       <div>
         <div class="sidebar-logo-text">NOVA<span>SPARK</span></div>
-        <span class="sidebar-logo-badge">V8.0.0</span>
+        <span class="sidebar-logo-badge">V9.0.0</span>
       </div>
     </div>
 
@@ -582,6 +582,9 @@
       </a>
       <a href="/health-monitor.html" class="nav-item">
         <span class="nav-item-icon">🏥</span> Health Monitor
+      </a>
+      <a href="/analytics.html" class="nav-item">
+        <span class="nav-item-icon">📈</span> Analytics
       </a>
       <a href="/bot-features.html" class="nav-item">
         <span class="nav-item-icon">⚙️</span> Bot Features
@@ -630,6 +633,9 @@
       </div>
       <div class="nav-item" id="install-btn" onclick="installBot()" style="display:none">
         <span class="nav-item-icon">⬇️</span> Install Bot
+      </div>
+      <div class="nav-item" id="announce-btn" onclick="openAnnouncementModal()" style="display:none">
+        <span class="nav-item-icon">📢</span> Announcement
       </div>
     </div>
 
@@ -856,7 +862,7 @@
     <footer class="page-footer">
       <div id="v5-server-stats">⚡ Loading server stats...</div>
       <div>
-        NOVASPARK V8 &nbsp;•&nbsp;
+        NOVASPARK V9 &nbsp;•&nbsp;
         <a href="https://render.com" target="_blank">Render.com</a> &nbsp;•&nbsp;
         <a href="/terms.html">Terms</a> &nbsp;•&nbsp;
         <a href="/bot-features.html">Bot Features</a> &nbsp;•&nbsp;
@@ -1137,6 +1143,8 @@ function applyAdminUI(role) {
   const installBtn = document.getElementById('install-btn');
   if (cleanupBtn) cleanupBtn.style.display = isAdmin ? '' : 'none';
   if (installBtn) installBtn.style.display = isAdmin ? '' : 'none';
+  const announceBtn = document.getElementById('announce-btn');
+  if (announceBtn) announceBtn.style.display = isAdmin ? '' : 'none';
 }
 
 applyAdminUI(currentUser.role);
@@ -1235,6 +1243,8 @@ function connect() {
       updatePlanUI(msg.plan);
       toast('Your plan has been updated to ' + msg.plan.toUpperCase() + '!', 'ok');
       localStorage.setItem('ns_user', JSON.stringify(currentUser));
+    } else if (msg.type === 'announcement') {
+      loadAnnouncement();
     }
   };
 }
@@ -1876,6 +1886,7 @@ function escHtml(s) {
 // Init
 connect();
 fetchSessions();
+loadAnnouncement();
 
 // ── NETWORK LATENCY PING ──────────────────────────────────────────────────────
 async function measureLatency() {
@@ -2188,6 +2199,46 @@ document.querySelectorAll('.section-card, .sc-wrap, .stat-card, .stats-bar').for
   el.classList.add('card-animate');
 });
 
+// ── V9: Announcement Banner ────────────────────────────────────────────────
+async function loadAnnouncement() {
+  try {
+    const r = await fetch('/api/announcement');
+    if (!r.ok) return;
+    const ann = await r.json();
+    if (!ann || !ann.message) { const b = document.getElementById('v9-announce'); if (b) b.style.display='none'; return; }
+    let banner = document.getElementById('v9-announce');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'v9-announce';
+      const mc = document.querySelector('.main-content');
+      if (mc) mc.insertBefore(banner, mc.firstChild);
+    }
+    const colors = { info:'rgba(37,99,235,0.15)','warning':'rgba(210,153,34,0.15)','error':'rgba(248,81,73,0.15)','success':'rgba(63,185,80,0.15)' };
+    const borders= { info:'rgba(37,99,235,0.4)', warning:'rgba(210,153,34,0.4)', error:'rgba(248,81,73,0.4)', success:'rgba(63,185,80,0.4)' };
+    const t = ann.type || 'info';
+    banner.style.cssText = `background:${colors[t]||colors.info};border:1px solid ${borders[t]||borders.info};border-radius:8px;padding:10px 16px;margin-bottom:16px;font-size:13px;display:flex;align-items:center;gap:8px`;
+    const icon = {info:'📢',warning:'⚠️',error:'🚨',success:'✅'}[t]||'📢';
+    banner.innerHTML = `<span>${icon}</span><span style="flex:1">${ann.message}</span>${ann.expiresAt?`<span style="font-size:11px;opacity:0.6">Expires: ${new Date(ann.expiresAt).toLocaleDateString()}</span>`:''}`;
+  } catch {}
+}
+// Announcement admin modal
+function openAnnouncementModal() {
+  const msg = prompt('Enter announcement message (leave blank to clear):');
+  if (msg === null) return;
+  const type = msg ? (prompt('Type? (info/warning/error/success)', 'info') || 'info') : 'info';
+  fetch('/api/announcement', { method:'PUT', headers:authHeaders(), body:JSON.stringify({ message: msg || null, type }) })
+    .then(r => r.json()).then(d => { toast(msg ? 'Announcement set' : 'Announcement cleared', 'ok'); loadAnnouncement(); });
+}
+// ── V9: Pin Session ───────────────────────────────────────────────────────
+async function pinSession(id, pinned) {
+  try {
+    const r = await fetch('/api/sessions/' + id + '/pin', { method:'PUT', headers:authHeaders(), body:JSON.stringify({ pinned }) });
+    const d = await r.json();
+    if (d.success) { toast(pinned ? 'Session pinned' : 'Session unpinned', 'ok'); fetchSessions(); }
+  } catch {}
+}
+// Hook into WS announcement
+const _origWsMsg = ws ? ws.onmessage : null;
 // ── V8: Live Bot Uptime Poller ─────────────────────────────────────────────
 let _uptimeTimers = {};
 function startUptimePolling() {
